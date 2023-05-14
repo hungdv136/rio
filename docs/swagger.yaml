@@ -1,0 +1,463 @@
+basePath: /api/v1
+definitions:
+  handler.StubRequestParam:
+    properties:
+      return_encoded:
+        description: Go SDK expect the response should be encoded data
+        type: boolean
+      stubs:
+        items:
+          $ref: '#/definitions/rio.Stub'
+        type: array
+    type: object
+  rio.BodyOperator:
+    properties:
+      content_type:
+        description: |-
+          The content type of the request body which is one of the following values
+           - "application/json"
+           - "text/xml"
+           - "text/html"
+           - "text/plain"
+           - "multipart/form-data"
+           - "application/x-www-form-urlencoded"
+        type: string
+      key_path:
+        description: |-
+          KeyPath is json or xml path
+          Refer to this document for json path syntax https://goessner.net/articles/JsonPath/
+        type: string
+      operator:
+        $ref: '#/definitions/rio.Operator'
+    type: object
+  rio.Cookie:
+    properties:
+      expired_at:
+        type: string
+      name:
+        type: string
+      value:
+        type: string
+    type: object
+  rio.FieldOperator:
+    properties:
+      field_name:
+        description: FieldName is header name, cookie name or parameter name
+        type: string
+      operator:
+        $ref: '#/definitions/rio.Operator'
+    type: object
+  rio.IncomingRequest:
+    properties:
+      body:
+        items:
+          type: integer
+        type: array
+      curl:
+        type: string
+      header:
+        type: string
+      id:
+        type: integer
+      method:
+        type: string
+      namespace:
+        type: string
+      stub_id:
+        type: integer
+      tag:
+        type: string
+      url:
+        type: string
+    type: object
+  rio.Operator:
+    properties:
+      name:
+        description: |-
+          OperatorName is the name of operator which is one of the following values
+           - "contains"
+           - "not_contains"
+           - "regex"
+           - "equal_to"
+           - "start_with"
+           - "end_with"
+           - "length"
+           - "empty"
+           - "not_empty"
+        type: string
+      value:
+        description: Value the expected value, which will be compared with value from
+          incoming request
+    type: object
+  rio.Proxy:
+    properties:
+      enable_record:
+        description: |-
+          EnableRecord is to enable/disable recording response from remote server
+          A stub will be automatically created in stub store
+        type: boolean
+      target_path:
+        description: |-
+          TargetPath is the relative path of the target API
+          This is optional field, it is not provided, it will be the same as original request path
+        type: string
+      target_url:
+        description: |-
+          TargetURL is the root url of the target server
+          The relative path will be parsed from incoming request
+        type: string
+    type: object
+  rio.RequestMatching:
+    properties:
+      body:
+        description: Rules to match request body by xml or json path
+        items:
+          $ref: '#/definitions/rio.BodyOperator'
+        type: array
+      cookie:
+        description: Rules to match cookie
+        items:
+          $ref: '#/definitions/rio.FieldOperator'
+        type: array
+      header:
+        description: Rules to match header name
+        items:
+          $ref: '#/definitions/rio.FieldOperator'
+        type: array
+      method:
+        description: Rules to match the request method GET, POST, PUT, DELETE, PATCH
+        type: string
+      query:
+        description: Rules to match request query
+        items:
+          $ref: '#/definitions/rio.FieldOperator'
+        type: array
+      url:
+        description: Rules to match the url
+        items:
+          $ref: '#/definitions/rio.Operator'
+        type: array
+    type: object
+  rio.Response:
+    properties:
+      body:
+        description: Body response body
+        items:
+          type: integer
+        type: array
+      body_file:
+        description: |-
+          This is the id of uploaded file that can be used to simulate the download
+          Or can be used to respond a large data payload which is not suitable to save in database
+        type: string
+      cookies:
+        description: Optional. Define response cookies
+        items:
+          $ref: '#/definitions/rio.Cookie'
+        type: array
+      header:
+        additionalProperties:
+          type: string
+        description: Optional. Define response headers
+        type: object
+      status_code:
+        description: Required. Define the response status code
+        type: integer
+      template:
+        $ref: '#/definitions/rio.Template'
+        description: Optional. If defined, then executed template will override response
+          data
+    type: object
+  rio.Stub:
+    properties:
+      active:
+        type: boolean
+      description:
+        type: string
+      id:
+        type: integer
+      namespace:
+        description: |-
+          WithNamespace sets namespace which can be used for isolating test data for each testing
+          This can be applied for the unit test which uses different test server for different test
+          With integration or unit test with single test server (which is not recommended), namespace should be empty
+        type: string
+      protocol:
+        description: |-
+          Protocol defines protocol. Value is either: http or grpc
+          Default value is http
+        type: string
+      proxy:
+        $ref: '#/definitions/rio.Proxy'
+        description: Rio will acts as reserved proxy if this settings are provided
+      request:
+        $ref: '#/definitions/rio.RequestMatching'
+        description: Matching rules which will match against the incoming requests
+      response:
+        $ref: '#/definitions/rio.Response'
+        description: Expected response which includes the body, header and cookies
+      settings:
+        $ref: '#/definitions/rio.StubSettings'
+      tag:
+        description: Tag is to add custom tag for grouping stub
+        type: string
+      weight:
+        description: |-
+          WithWeight sets weight. The higher weight, the higher priority
+          It is sometimes the case that you'll want to declare two or more stub mappings that "overlap",
+          in that a given request would be a match for more than one of them
+          By default, the most recently added matching stub will be used to satisfy the request
+          However, in some cases it is useful to exert more control
+        type: integer
+    type: object
+  rio.StubSettings:
+    properties:
+      deactivate_when_matched:
+        description: |-
+          This is to disable the matched stub, it is not used for the next request.
+          In the following example, the first request will return the first stub with higher weight,
+          then that stub is not available for the next request anymore
+        type: boolean
+      delay_duration:
+        description: |-
+          It is sometimes we want to simulate slow response API.
+          Rio supports this feature by set delay duration
+        type: integer
+      store_version:
+        description: StoreVersion is to control data structure version for stub
+        type: integer
+    type: object
+  rio.Template:
+    properties:
+      script:
+        description: Script is content of template file. See ResponseScript for the
+          detail structure
+        type: string
+      script_schema_type:
+        description: Supported json and yaml. Default value is yaml
+        type: string
+    type: object
+info:
+  contact: {}
+  description: A mock framework for unit test http in golang, also support integration
+    test
+  title: HTTP Mock
+  version: "1.0"
+paths:
+  /incoming_request/list:
+    get:
+      description: Get a list of requests
+      operationId: get-requests
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                requests:
+                  items:
+                    $ref: '#/definitions/rio.IncomingRequest'
+                  type: array
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get requests
+      tags:
+      - Requests
+  /proto/upload:
+    post:
+      description: Upload proto to storage
+      operationId: update-proto
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                proto:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Upload proto API
+      tags:
+      - UploadProto
+  /reset:
+    delete:
+      description: Reset stubs by a namespace
+      operationId: reset
+      parameters:
+      - description: Namespace
+        in: query
+        name: namespace
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Reset stubs
+      tags:
+      - Reset
+  /stub/create_many:
+    post:
+      description: Create a list of stubs
+      operationId: create-stubs
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.StubRequestParam'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                stubs:
+                  items:
+                    $ref: '#/definitions/rio.Stub'
+                  type: array
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Create stubs
+      tags:
+      - Stubs
+  /stub/list:
+    get:
+      description: Get a list of stubs
+      operationId: get-stubs
+      parameters:
+      - description: Namespace
+        in: query
+        name: namespace
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                stubs:
+                  items:
+                    $ref: '#/definitions/rio.Stub'
+                  type: array
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get stubs
+      tags:
+      - Stubs
+  /stub/upload:
+    post:
+      description: Upload file to storage
+      operationId: update-file
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                file_id:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - type: string
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Upload file API
+      tags:
+      - UploadFile
+swagger: "2.0"

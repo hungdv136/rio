@@ -1,0 +1,43 @@
+/**
+   * check for offer validity
+   *
+*/
+syntax = "proto3";
+
+package offers.v1;
+
+import "common/v1/common.proto";
+import "common/v1/promotion.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/hungdv136/rio/internal/evo_intercom/gen/go/offers/v1";
+
+message CampaignOfferRequest {
+  string campaign_id = 1;
+  repeated OfferRequest offers = 2;
+}
+
+message OfferRequest {
+  string id = 1;
+}
+
+// Request structure of CheckOffer
+message ValidateOfferRequest {
+  string request_id = 1; // idempotency key for checking offer
+  string requestor = 2; // name of requestor
+  repeated CampaignOfferRequest campaign_offers = 8;
+}
+
+message ValidateOfferResponse {
+  string id = 1; // id
+  string request_id = 2; // input request id
+  common.v1.Promotion promotion = 4;
+  repeated common.v1.InvalidOffer invalid_offers = 5; // list of invalid offers
+}
+
+service OfferService {
+  // Used to validate offer. In case of an error response, detail is common.OfferError
+  // Possible verdict: To be updated...
+  // INTERNAL_ERROR : internal error (Error Code = 13)
+  rpc ValidateOffer(ValidateOfferRequest) returns (ValidateOfferResponse);
+}

@@ -1,0 +1,31 @@
+skinparam BoxPadding 15
+skinparam ParticipantPadding 0
+
+title A Flexible Mocking Framework for Integration Test
+
+actor Tester
+participant IDE
+participant "Target Service" as Service
+participant "Mock Server" AS Server
+
+autonumber
+== Arrange ==
+Tester -> IDE: Write stub matching rules\nand expected response 
+IDE -> Server: Submit stubs to mocking server
+Server --> IDE: OK
+|||
+Tester -> Service: Configure root URL of the external service to mock server
+|||
+autonumber
+== Act == 
+Tester -> IDE: Write code to perform HTTP request 
+IDE -> Service: Perform HTTP request
+Service -> Server: Make an external API request\nsince url has changed to mock server
+Server --> Server: Match request with predefined rules
+Server --> Server: Select the first matched stub
+Server --> Server: Extract the predefined response
+Server --> Server: Capture request to database
+Server --> Service: Respond predefined response\n(header,cookies, body, ...)
+Service --> Service: Process response
+Service --> IDE: Response 
+IDE -> Tester: Test Result

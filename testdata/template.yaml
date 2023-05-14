@@ -1,0 +1,17 @@
+script_schema_type: yaml
+script: >
+    status_code: 200
+    
+    cookies: 
+        {{ range $cookie := .Request.Cookies }}
+        - name: {{ $cookie.Name }}
+          value: {{ $cookie.Value }}
+        {{end}}
+
+    headers:
+        X-REQUEST-ID: {{ .Request.Header.Get "X-REQUEST-ID"}} 
+    
+    body: >
+        {
+            "encrypted_value": "{{ encryptAES "e09b3cc3b4943e2558d1882c9ef999eb" .JSONBody.naked_value}}"
+        }

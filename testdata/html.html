@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Bank</title>
+</head>
+<body>
+<h1>TPBank OTP</h1>
+<p>Input your OTP</p>
+<label>
+    <input type="text">
+</label>
+<button type="button" onclick="handleSubmit()">Submit</button>
+<script>
+    function handleSubmit() {
+        const params = new Proxy(new URLSearchParams(window.location.search), {
+            get: (searchParams, prop) => searchParams.get(prop),
+        });
+        window.location.href =
+            `http://localhost:8080/public/otp/callback?payment_intent_id=${params.payment_intent_id}&merchant_id=${params.merchant_id}&psp_code=${params.psp_code}&signature=${params.signature}`;
+    }
+</script>
+</body>
+</html>

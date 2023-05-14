@@ -1,0 +1,124 @@
+stubs:
+  - active: true
+    namespace: ""
+    request:
+      body:
+        - content_type: application/json
+          key_path: $.book.type
+          operator:
+            name: equal_to
+            value: How to write test in Golang
+      cookie:
+        - field_name: SESSION_ID
+          operator:
+            name: equal_to
+            value: 27a6c092-3bdc-4f46-b1fb-1c7c5eea39e0
+      header:
+        - field_name: X-REQUEST-ID
+          operator:
+            name: equal_to
+            value: f5dcaabc-caac-4c5e-9e06-6b1e935b756d
+      method: GET
+      url:
+        - name: contains
+          value: animal/create
+    response:
+      template:
+        script_schema_type: yaml
+        script: >
+            status_code: 200
+            
+            cookies: 
+                {{ range $cookie := .Request.Cookies }}
+                - name: {{ $cookie.Name }}
+                  value: {{ $cookie.Value }}
+                {{end}}
+
+            headers:
+                X-REQUEST-ID: {{ .Request.Header.Get "X-REQUEST-ID"}} 
+            
+            body: >
+                {
+                    "encrypted_value": "{{ encryptAES "e09b3cc3b4943e2558d1882c9ef999eb" .JSONBody.naked_value}}"
+                }
+    settings:
+      deactivate_when_matched: false
+      delay_duration: 0s
+    weight: 0
+  - active: true
+    request:
+      method: GET
+      url:
+        - name: contains
+          value: animal/create_html
+    response: 
+      header: 
+        Content-Type: text/html
+      body: >
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta http-equiv="X-UA-Compatible" content="ie=edge">
+          <title>Bank</title>
+        </head>
+        <body>
+        <h1>TPBank OTP</h1>
+        <p>Input your OTP</p>
+        <label>
+          <input type="text">
+        </label>
+        <button type="button" onclick="handleSubmit()">Submit</button>
+        <script>
+          function handleSubmit() {
+              const params = new Proxy(new URLSearchParams(window.location.search), {
+                  get: (searchParams, prop) => searchParams.get(prop),
+              });
+              window.location.href =
+                  `http://localhost:8080/public/otp/callback?payment_intent_id=${params.payment_intent_id}&merchant_id=${params.merchant_id}&psp_code=${params.psp_code}&signature=${params.signature}`;
+          }
+        </script>
+        </body>
+        </html>
+  - active: true
+    request:
+      method: GET
+      url:
+        - name: contains
+          value: animal/create_xml
+    response: 
+      header: 
+        Content-Type: text/xml
+      body: >
+        <?xml version="1.0"?>
+        <catalog>
+          <book id="bk101">
+            <author>Gambardella, Matthew</author>
+            <title>XML Developer's Guide</title>
+            <genre>Computer</genre>
+            <price>44.95</price>
+            <publish_date>2000-10-01</publish_date>
+            <description>An in-depth look at creating applications 
+            with XML.</description>
+          </book>
+        </catalog>
+  - active: true
+    request:
+      method: GET
+      url:
+        - name: contains
+          value: animal/create_json
+    response: 
+      header: 
+        Content-Type: application/json
+      body: >
+        {
+          "key": "This is value"
+        }
+      error: 
+        message: This is error
+        details:
+          - type: common.v1.CommonError
+            value: 
+              key: This is value of detail

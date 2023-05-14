@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: ..
+      args:
+        GITHUB_TOKEN: $GITHUB_TOKEN
+      dockerfile: docker/test.Dockerfile
+    env_file: .test.env
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0.18
+    environment:
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=rio_services
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    command: "--character-set-server=utf8mb4 --max-connections=100000 --sql-mode='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'"
+    logging:
+      driver: none
+    tmpfs:
+      - /var/lib/mysql

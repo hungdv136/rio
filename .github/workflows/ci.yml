@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - "**"
+
+concurrency:
+  group: branch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint
+    steps:
+
+      - uses: actions/checkout@v3
+      
+      - name: Run lint
+        run: make lint
+
+  test:
+    name: test
+    strategy:
+      matrix:
+        db: [ mariadb, mysql ]
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Run unit test
+        run: make test-${{ matrix.db }}-up
+
+      - name: Post Run unit test
+        if: ${{ always() }}
+        run: make test-${{ matrix.db }}-down

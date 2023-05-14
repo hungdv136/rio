@@ -1,0 +1,44 @@
+{
+    "stubs": [
+        {
+            "active": true,
+            "settings": {},
+            "request": {
+                "method": "POST",
+                "url": [
+                    {
+                        "name": "contains",
+                        "value": "/kyc/public_registry/validate"
+                    }
+                ],
+                "header": []
+            },
+            "response": {
+                "body": {
+                    "status": "SUCCESS",
+                    "message": "KYC Details for PAN retrieved successfully",
+                    "kycResult": {
+                      "fullName": "EJAZ AHMED CIKILGHAR",
+                      "idNumber": "AHJPC5385L",
+                      "idStatus": "VALID",
+                      "lastName": "CIKILGHAR",
+                      "firstName": "EJAZ AHMED",
+                      "panStatus": "VALID",
+                      "idHolderTitle": "Shri",
+                      "idLastUpdated": "11/08/2017",
+                      "aadhaarSeedingStatus": "Y"
+                    },
+                    "kycStatus": "SUCCESS",
+                    "responseCode": "S00000",
+                    "decentroTxnId": "F90E58A85A334A1EA77CCFFE7CFF28EF",
+                    "requestTimestamp": "2022-01-11 09:51:16.389036 IST (GMT +0530)",
+                    "responseTimestamp": "2022-01-11 09:51:16.594388 IST (GMT +0530)"
+                },
+                "header": {
+                    "Content-Type": "application/json"
+                },
+                "status_code": 200
+            }
+        }
+    ]
+}

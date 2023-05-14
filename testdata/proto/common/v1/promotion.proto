@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package common.v1;
+
+import "common/v1/common.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/hungdv136/rio/internal/evo_intercom/gen/go/common/v1";
+
+message CampaignPromotion {
+  int64 discount_amount = 1;
+  repeated EligibleCampaign eligible_campaigns = 2;
+}
+
+message EligibleCampaign {
+  string campaign_id = 1;
+  repeated EligibleOffer eligible_offers = 2;
+}
+
+message Promotion {
+  int64 discount_amount = 1;
+  repeated EligibleOffer eligible_offers = 2;
+}
+
+// EligibleOffer eligible offers detail
+message EligibleOffer {
+  string id = 1; // ID of offer
+  string code = 2; // eligible code
+  string benefit_type = 3; // offer type (direct/shipping)
+  string apply_type = 4; // offer type (order_level/order_item_level, ...)
+  int64 discount_amount = 5; // discount amount of eligible offer
+  google.protobuf.Timestamp start_at = 6;
+  google.protobuf.Timestamp end_at = 7;
+  MultiLanguageData description = 8;
+  MultiLanguageData detail_page = 9;
+  MultiLanguageData title = 10;
+  Images images = 11;
+  string campaign_id = 12; // campaign id
+  common.v1.MultiLanguageData terms = 13;
+}
+
+// invalid codes detail
+message InvalidOffer {
+  string offer_id = 1; //  The id of invalid offer
+  string rejected_code = 2; // reject type (not_found|expired|used|not_eligible)
+  string rejected_reason = 3; // rejected reason
+}
+
+message Earning {
+  PointOffer points = 1;
+  repeated EligibleOffer vouchers = 2; // list of offers
+}
+
+message PointOffer {
+  int64 points = 1; // total earned points
+}
+
+message OfferError {
+  Verdict verdict = 1;
+  string message = 2;
+  google.protobuf.Any data = 3;
+}

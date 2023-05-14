@@ -1,0 +1,11 @@
+vendor/
+tmp/
+*.log
+*.bak
+production.*
+.DS_Store
+.vscode/
+tags
+.idea
+output/
+bin/

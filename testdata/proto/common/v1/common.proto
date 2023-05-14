@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package common.v1;
+
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/hungdv136/rio/internal/evo_intercom/gen/go/common/v1";
+
+// TODO: any standard grpc error for TS
+enum Verdict {
+  INTERNAL_ERROR = 0;
+  INVALID_PHONE_NUMBER = 1;
+  LIMIT_EXCEEDED = 2; // hit rate limit rules
+  INCORRECT_OTP = 3; // verify OTP unsuccessfully
+  EXISTED_RECORD = 4; // when a user already exists
+  RECORD_NOT_FOUND = 5; // record not found
+  INVALID_PARAMETERS = 6; // invalid parameters
+  EXPIRED_DATA = 7; // data is expired (ex: data maybe OTP, ...)
+  PERMISSION_DENIED = 8;
+}
+
+// address for shipping
+message Address {
+  string province = 1;
+  string district = 2;
+  string ward = 3;
+  string street = 4;
+}
+
+message Payment {
+  string method = 1;
+  string provider = 2;
+}
+
+message MultiLanguageData {
+  string vi = 1;
+  string en = 2;
+}
+
+// filter by paging
+message PagingFilter {
+  uint32 page = 1;
+  uint32 per_page = 2;
+}
+
+// Multi Version Object ID
+message Images {
+  string large_banner_id = 1;
+  string banner_id = 2;
+  string thumbnail_id = 3;
+}
+
+message CommonError {
+  // status code http
+  int32 status_code = 1;
+  string verdict = 2;
+  string message = 3;
+  google.protobuf.Any data = 4;
+}
