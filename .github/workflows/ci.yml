@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   lint:
+    runs-on: ubuntu-latest
     name: lint
     steps:
 
@@ -21,6 +22,7 @@ jobs:
 
   test:
     name: test
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         db: [ mariadb, mysql ]
