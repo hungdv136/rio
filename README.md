@@ -62,6 +62,7 @@ Rio is a declarative HTTP mocking library for unit test in Golang and HTTP/gPRC 
 - Supports persistent stubs to database with caching to improve performance
 - Flexible for matching request by method, URL params, headers, cookies and bodies
 - Dynamic response with go-template
+- Automatically generates stub with reserve proxy mode
 
 ## How it works
 
