@@ -52,7 +52,7 @@
 
 ## Introduction
 
-Rio is a declarative HTTP mocking library for unit test in Golang and HTTP/gPRC mock server for integration test. Using the same framework for both kind of tests can easily share stub definition schema/code between developers and testers
+Rio is a declarative HTTP mocking library for unit test in Golang and HTTP/gPRC mock server for integration test. Using the same framework for both kind of tests can help to share stub definition schema or codes between developers and testers easily. This framework is used for thousands of test cases in our systems since 2018
 
 ## Features
 
