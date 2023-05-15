@@ -11,6 +11,7 @@ import (
 	fs "github.com/hungdv136/rio/internal/storage"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/encoding/gzip" // blank import for gzip decompress
+	health "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -23,7 +24,7 @@ type Server struct {
 func NewServer(stubStore rio.StubStore, fileStorage fs.FileStorage, descriptor *ServiceDescriptor) *Server {
 	handler := newHandler(stubStore, fileStorage, descriptor)
 	grpcServer := grpc.NewServer(grpc.UnknownServiceHandler(handler.handleRequest))
-	//health.RegisterHealthServer(grpcServer, &server.HealthService{})
+	health.RegisterHealthServer(grpcServer, &HealthService{})
 	reflection.Register(grpcServer)
 	return &Server{grpcServer: grpcServer}
 }

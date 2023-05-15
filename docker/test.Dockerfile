@@ -12,8 +12,6 @@ WORKDIR /src
 
 COPY go.mod go.sum /src/
 
-RUN GOPRIVATE=github.com/hungdv136/rio/internal go mod download
-
 COPY . /src/
 
 CMD ["./docker/test.sh"]

@@ -7,8 +7,6 @@ WORKDIR /src
 
 COPY go.mod go.sum /src/
 
-RUN GOPRIVATE=github.com/hungdv136/rio/internal go mod download
-
 COPY . /src/
 
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/server cmd/server/main.go \

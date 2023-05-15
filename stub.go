@@ -140,7 +140,7 @@ type Proxy struct {
 	TargetURL string `json:"target_url,omitempty" yaml:"target_url"`
 
 	// TargetPath is the relative path of the target API
-	// This is optional field, it is not provided, it will be the same as original request path
+	// This is optional field, if not provided, it will be the same as original request path
 	TargetPath string `json:"target_path,omitempty" yaml:"target_path"`
 
 	// EnableRecord is to enable/disable recording response from remote server

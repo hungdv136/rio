@@ -4,7 +4,6 @@ MODULE = rio
 IMAGE_TAG ?= $(MODULE)
 GITHUB_SHA ?= $(MODULE)
 
-REPO_PATH = /go/src/github.com/hungdv136/$(MODULE)
 SRC = `go list -f {{.Dir}} ./... | grep -v /vendor/`
 
 ndef = $(if $(value $(1)),,$(error $(1) not set))
