@@ -50,58 +50,100 @@
     - [Deploy GRPC mock server](#deploy-grpc-mock-server)
   - [Configure Cache](#configure-cache)
 
+## Introduction
+
+Rio is a declarative HTTP/gPRC mocking framework for unit and integration test 
+
 ## How it works
 
 ![Workflow](docs/flow.png)
 
 ## How to use in unit test
 
-The below is an end to end example for using **Rio** as a mock framework for unit test. In this example, we are going to test an external service `animal/create`. We will set up a local mock server as below:
+Suppose that we want to test a function that calls API and parse the response data as the following example
 
 ```go
-ctx := context.Background()
-server := NewLocalServerWithReporter(t)
+func CallAPI(ctx context.Context, rootURL string, input map[string]interface{}) (map[string]interface{}, error) {
+	bodyBytes, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
 
-animalName := uuid.NewString()
-requestID := uuid.NewString()
-animalID := uuid.New().String()
-err := NewStub().For("POST", Contains("animal/create")).
-    WithHeader("X-REQUEST-ID", EqualTo(requestID)).
-    WithRequestBody(BodyJSONPath("$.name", EqualTo(animalName))).
-    WillReturn(NewResponse().WithBody(MapToJSON(types.Map{"id": animalID}))).
-    Send(ctx, server)
-require.NoError(t, err)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, rootURL+"/animal", bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string]interface{}{}
+	decoder := json.NewDecoder(res.Body)
+	if err := decoder.Decode(&data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
 ```
 
-The stub has been pushed to the server. This is used for matching the upcomming request. If the required information(method, path, header and body) are matched, the response in the stub above will be responded. Now we perform the request to test `animal/create` API
+We can use `Rio` to mock the HTTP response as the following example
 
-```go
-requestUrl := server.GetURL() + "/animal/create"
-option := httpkit.NewRequestOption()
-option.SetHeader("X-REQUEST-ID", requestID)
-option.SetHeader(HeaderContentType, ContentTypeJSON)
-option.Body =types.Map{"name": animalName, "type": "bird"}.ForceJSON()
-
-res, err := httpkit.SendRequest(ctx, http.MethodPost, requestUrl, option)
-require.NoError(t, err)
-require.Equal(t, http.StatusOK, res.StatusCode)
-
-outData :=types.Map{}
-err = httpkit.ParseResponse(ctx, res, &outData)
-require.NoError(t, err)
-require.NotEmpty(t, outData)
-require.Equal(t, animalID, outData.ForceString("id"))
+```bash
+go get github.com/hungdv136/rio@latest
 ```
+
+```go 
+func TestCallAPI(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	server := rio.NewLocalServerWithReporter(t)
+
+	animalName := uuid.NewString()
+	returnedBody := map[string]interface{}{"id": uuid.NewString()}
+
+	require.NoError(t, rio.NewStub().
+		// Verify method and path
+		For("POST", rio.EndWith("/animal")).
+		// Verify if the request body is composed correctly
+		WithRequestBody(rio.BodyJSONPath("$.name", rio.EqualTo(animalName))).
+		// Response with 200 and json
+		WillReturn(rio.NewResponse().WithBody(rio.MustToJSON(returnedBody))).
+		// Submit stub to mock server
+		Send(ctx, server))
+
+	input := map[string]interface{}{"name": animalName}
+	resData, err := CallAPI(ctx, server.GetURL(ctx), input)
+	require.NoError(t, err)
+	require.Equal(t, returnedBody, resData)
+}
+
+```
+
+[Examples](https://github.com/hungdv136/rio_examples)
 
 ## How to use in integration test
 
-With the integration test, we need to [deploy](#how-to-deploy) **Rio** as a standalone service which will receive requests from the external modules. Before running a test, we need to create a stub in the remote mock server which will be used to matching the upcomming request, if request is matched then the predefined response in the stub will be responded
+Suppose that we want to test (manual or automation) an API that calls an external API by simulating a mock response for that external API
 
-### Change the root url of the service to mock server
+### Deploy the `Rio` as a stand-alone service
+
+See [deploy](#how-to-deploy). After deployed, Rio can be accessed by other services via a domain, for example `http://rio-domain`
+
+### Change the root url configuration of the external to mock server
 
 Go to ENV management system to change the root URL to the mock server with the format: `http://rio-domain/echo`
 
-### Write a test case
+### Perform manual test case 
+
+1. [Use Postman to submit stub](#create-stubs-using-postman)
+2. Using Postman to perform manual test 
+
+### Write a automation test case with Golang
 
 1. Create a new server
 
@@ -760,7 +802,7 @@ stubs:
  
 ## Mocking GRPC
 
-Mocking grpc is mostly the same as mocking HTTP, the following are some minor differences
+Mocking grpc is mostly the same as mocking HTTP, the following are some minor differences. Currently, only Unary is supported. Even this can be used with unit test, we recommend we should not used this for unit test since it is not right way to do unit test with gPRC
 
 ### Define a proto
 
