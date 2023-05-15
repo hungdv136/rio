@@ -19,7 +19,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            name/rio
+            hungdv136/rio
           flavor: |
             latest=false
           tags: |
