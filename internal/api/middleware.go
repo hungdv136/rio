@@ -9,8 +9,26 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/hungdv136/rio"
 	"github.com/hungdv136/rio/internal/log"
 )
+
+// RequestIDMiddleware adds X-Request-ID value to request, response and save to context variable
+func RequestIDMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		id := ctx.Request.Header.Get(rio.HeaderXRequestID)
+		if len(id) == 0 {
+			id = uuid.NewString()
+			ctx.Request.Header.Set(rio.HeaderXRequestID, id)
+		}
+
+		wrappedCtx := log.SaveID(ctx, id)
+		ctx.Request = ctx.Request.WithContext(wrappedCtx)
+		ctx.Writer.Header().Set(rio.HeaderXRequestID, id)
+		ctx.Next()
+	}
+}
 
 // Recovery returns a middleware for a given writer that recovers from any panics and calls the provided handle func to handle it
 func Recovery() gin.HandlerFunc {

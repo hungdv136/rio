@@ -52,7 +52,7 @@
 
 ## Introduction
 
-Rio is an open source declarative HTTP/gPRC mocking framework for unit and integration test 
+Rio is an open source declarative HTTP/gPRC mocking framework for unit and integration test in Golang
 
 ## How it works
 
@@ -103,11 +103,14 @@ func TestCallAPI(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+
+  // Initialize a mock server 
 	server := rio.NewLocalServerWithReporter(t)
 
 	animalName := uuid.NewString()
 	returnedBody := map[string]interface{}{"id": uuid.NewString()}
 
+  // Create a stub
 	require.NoError(t, rio.NewStub().
 		// Verify method and path
 		For("POST", rio.EndWith("/animal")).
@@ -129,7 +132,7 @@ func TestCallAPI(t *testing.T) {
 
 ## How to use in integration test
 
-Suppose that we want to test (manual or automation) an API that calls an external API by simulating a mock response for that external API
+Suppose that we want to test (manual or automation) an API that calls an external API by simulating a mock response for that external API. It can help us to create stable tests by isolating our test suites with external systems
 
 ### Deploy `Rio` as a stand-alone service
 
@@ -440,6 +443,8 @@ NewStub().WithReturn(NewResponse().WithFileBody(fileID))
 
 ### Redirection
 
+This is to redirect request to another url
+
 ```go
 resStub := NewResponse().WithRedirect("https://redirect_url.com")
 NewStub().WithReturn(resStub)
@@ -460,7 +465,8 @@ NewStub().WithReturn(resStub)
 
 If we want to communicate with real service and record the request and response, then we can enable recording as the following
 
-- Target URL is the root url of the real system
+- `target_url` is the root url of the real system
+- `target_path` is optional. If not provided, then the same relative path from incoming request is used
 
 ```go
 rio.NewStub().
@@ -722,11 +728,11 @@ NewStub().For("GET", Contains("animal/create")).ShouldDeactivateWhenMatched().Wi
 
 ### Namespace
 
-The namespace can be used to separate data between test case. This is helpful when a single mock server is used for many features and projects. Use this pattern as the root url `http://rio.mock.com/<namespace>/echo`, for example, we want to separate test data when testing SI, PI, then set the root url for those service as below
+The namespace can be used to separate data between test case. This is helpful when a single mock server is used for many features and projects. Use this pattern as the root url `http://rio.mock.com/<namespace>/echo`. For example, we want to separate test stubs for payment_service and lead service, then set the root url for those service as below
 
-- PIT: `http://rio.mock.com/pit_service/echo`
+- Payment Service Root URL: `http://rio.mock.com/payment_service/echo`
   
-- SI: `http://rio.mock.com/si_service/echo`
+- Lead Service Root URL: `http://rio.mock.com/lead_service/echo`
    
 If this url is used `http://rio.mock.com.com/echo`, then default namespace (empty) will be used
 
@@ -800,7 +806,7 @@ stubs:
  
 ## Mocking GRPC
 
-Mocking grpc is mostly the same as mocking HTTP, the following are some minor differences. Currently, only Unary is supported. Even this can be used with unit test, we recommend we should not used this for unit test since it is not right way to do unit test with gPRC
+Mocking grpc is mostly the same as mocking HTTP, the following are some minor differences. Currently, only Unary is supported. Even this gRPC mocking can be used with unit test, we recommend that we should not use it for unit test since it is not right way to do unit test with gPRC
 
 ### Define a proto
 
@@ -926,7 +932,7 @@ This is required even we want to use GRPC mock only because HTTP server is not o
 
 This is optional. The GRPC is to serve mock GRPC requests. If you just want to use HTTP mock, then can skip this step
 
-### Configure Cache 
+### Configure cache 
 
 The below are default configuration for cache. If we want to change cache TTL or change cache strategy, then adjust the following env. Otherwise, can ignore these configurations
 

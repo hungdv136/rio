@@ -17,14 +17,13 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// TODO: Consider to use mock instead of real database
 func TestServerEndToEnd(t *testing.T) {
 	t.Parallel()
 
 	ctx := log.SaveID(context.Background(), t.Name())
 	storageCfg := fs.LocalStorageConfig{StoragePath: "../../testdata"}
 	storage := fs.NewLocalStorage(storageCfg)
-
-	// TODO: Consider to use mock instead of real database
 	stubStore, err := database.NewStubDBStore(ctx, config.NewDBConfig())
 	require.NoError(t, err)
 

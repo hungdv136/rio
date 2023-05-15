@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,11 +15,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PaesslerAG/jsonpath"
 	"github.com/hungdv136/rio/internal/log"
 	fs "github.com/hungdv136/rio/internal/storage"
 )
 
-// Handler handles http equest
+// Handler handles mocking for http request
 type Handler struct {
 	fileStorage fs.FileStorage
 	stubStore   StubStore
@@ -72,7 +75,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	matchedStubs := make([]*Stub, 0, len(stubs))
 	for _, stub := range stubs {
-		matched, err := stub.Match(ctx, r)
+		matched, err := matchHTTPRequest(ctx, stub, r)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -230,4 +233,192 @@ func (h *Handler) proxyRecorder(stub *Stub) func(*http.Response) error {
 		log.Info(ctx, "recording has been created in stub id", clonedStub.ID)
 		return nil
 	}
+}
+
+// matchHTTPRequest matches a stub with incoming http request
+func matchHTTPRequest(ctx context.Context, s *Stub, r *http.Request) (bool, error) {
+	if s.Request == nil {
+		return false, nil
+	}
+
+	if len(s.Request.Method) > 0 && !strings.EqualFold(s.Request.Method, r.Method) {
+		return false, nil
+	}
+
+	if matched, err := matchURL(ctx, s, r); err != nil || !matched {
+		return false, err
+	}
+
+	if matched, err := matchHeader(ctx, s, r); err != nil || !matched {
+		return false, err
+	}
+
+	if matched, err := matchCookies(ctx, s, r); err != nil || !matched {
+		return false, err
+	}
+
+	if matched, err := matchQuery(ctx, s, r); err != nil || !matched {
+		return false, err
+	}
+
+	if matched, err := matchBody(ctx, s, r); err != nil || !matched {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func matchURL(ctx context.Context, s *Stub, r *http.Request) (bool, error) {
+	for _, op := range s.Request.URL {
+		if matched, err := Match(ctx, op, r.URL.String()); err != nil || !matched {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func matchHeader(ctx context.Context, s *Stub, r *http.Request) (bool, error) {
+	for _, op := range s.Request.Header {
+		if matched, err := Match(ctx, op.Operator, r.Header.Get(op.FieldName)); err != nil || !matched {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func matchQuery(ctx context.Context, s *Stub, r *http.Request) (bool, error) {
+	query := r.URL.Query()
+	for _, op := range s.Request.Query {
+		if matched, err := Match(ctx, op.Operator, query.Get(op.FieldName)); err != nil || !matched {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func matchCookies(ctx context.Context, s *Stub, r *http.Request) (bool, error) {
+	for _, op := range s.Request.Cookie {
+		cookie, err := r.Cookie(op.FieldName)
+		if err != nil {
+			if !errors.Is(err, http.ErrNoCookie) {
+				return false, err
+			}
+
+			// If cookie not found, then lets the operator decides the output
+			if matched, err := Match(ctx, op.Operator, ""); err != nil || !matched {
+				return false, err
+			}
+
+			continue
+		}
+
+		if matched, err := Match(ctx, op.Operator, cookie.Value); err != nil || !matched {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func matchBody(ctx context.Context, s *Stub, r *http.Request) (bool, error) {
+	if len(s.Request.Body) == 0 {
+		return true, nil
+	}
+
+	if r.Body == nil {
+		err := errors.New("missing body")
+		log.Error(ctx, err)
+		return false, err
+	}
+
+	contentType := r.Header.Get(HeaderContentType)
+	if err := validateBodyOperator(ctx, s, contentType); err != nil {
+		return false, err
+	}
+
+	if strings.HasPrefix(contentType, ContentTypeJSON) {
+		return matchJSONBody(ctx, s, r)
+	}
+
+	if strings.HasPrefix(contentType, ContentTypeMultipart) {
+		return matchMultiplePart(ctx, s, r)
+	}
+
+	if strings.HasPrefix(contentType, ContentTypeForm) {
+		return matchURLEncodedBody(ctx, s, r)
+	}
+
+	err := fmt.Errorf("unsupported content type %s", contentType)
+	log.Error(ctx, err)
+	return false, err
+}
+
+func matchJSONBody(ctx context.Context, s *Stub, r *http.Request) (bool, error) {
+	dataMap := map[string]interface{}{}
+	decoder := json.NewDecoder(readRequestBody(r))
+	decoder.UseNumber()
+	if err := decoder.Decode(&dataMap); err != nil && !errors.Is(err, io.EOF) {
+		log.Error(ctx, "cannot decode json", err)
+		return false, err
+	}
+
+	for _, op := range s.Request.Body {
+		val, err := jsonpath.Get(op.KeyPath, dataMap)
+		if err != nil {
+			if !strings.Contains(err.Error(), "unknown key") {
+				log.Error(ctx, "error when executing json path", err)
+				return false, err
+			}
+		}
+
+		if matched, err := Match(ctx, op.Operator, val); err != nil || !matched {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func matchMultiplePart(ctx context.Context, s *Stub, r *http.Request) (bool, error) {
+	if err := r.ParseMultipartForm(1024 * 1024 * 20 << 20); err != nil {
+		log.Error(ctx, err)
+		return false, err
+	}
+
+	for _, op := range s.Request.Body {
+		val := r.FormValue(op.KeyPath)
+		if matched, err := Match(ctx, op.Operator, val); err != nil || !matched {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func matchURLEncodedBody(ctx context.Context, s *Stub, r *http.Request) (bool, error) {
+	for _, op := range s.Request.Body {
+		val := r.FormValue(op.KeyPath)
+		if matched, err := Match(ctx, op.Operator, val); err != nil || !matched {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+// Each body operator is applied for a specific content type
+// This is to validate whether request content type is matched with content type of all operators
+func validateBodyOperator(ctx context.Context, s *Stub, contentType string) error {
+	for _, op := range s.Request.Body {
+		if !strings.HasPrefix(contentType, op.ContentType) {
+			err := fmt.Errorf("mismatch request and operator content type %s - %s", contentType, op.ContentType)
+			log.Error(ctx, err)
+			return err
+		}
+	}
+
+	return nil
 }

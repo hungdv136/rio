@@ -64,6 +64,7 @@ func (app *App) Start(ctx context.Context) error {
 }
 
 func (app *App) setup() {
+	app.kit.Use(RequestIDMiddleware())
 	app.kit.Use(Recovery())
 	app.initRoutes()
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/hungdv136/rio"
 	"github.com/hungdv136/rio/internal/config"
 	"github.com/hungdv136/rio/internal/netkit"
+	"github.com/hungdv136/rio/internal/test"
 	"github.com/hungdv136/rio/internal/test/mock"
 	"github.com/hungdv136/rio/internal/types"
 	"github.com/stretchr/testify/require"
@@ -33,7 +35,7 @@ func TestCreateStub(t *testing.T) {
 	goClientParams := types.Map{"stubs": []*rio.Stub{stub}}
 
 	// Assert that can submit with raw JSON without Go client
-	rawJSONParams := parseJSONFileToMap(t, "../../testdata/stubs.json")
+	rawJSONParams := test.ParseJSONFileToMap(t, "../../testdata/stubs.json")
 
 	// Assert that can submit raw html text from Go client
 	html, err := os.ReadFile("../../testdata/html.html")
@@ -89,7 +91,7 @@ func TestCreateStubWithYaml(t *testing.T) {
 	app, err := NewApp(ctx, config.NewConfig())
 	require.NoError(t, err)
 
-	w := netkit.NewResponseRecorder()
+	w := httptest.NewRecorder()
 	req, err := http.NewRequestWithContext(ctx, "POST", "/stub/create_many", bytes.NewReader(fileData))
 	require.NoError(t, err)
 	req.Header.Add("Content-Type", "application/x-yaml")
@@ -158,7 +160,7 @@ func TestUploadFile(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	w := netkit.NewResponseRecorder()
+	w := httptest.NewRecorder()
 	fileID := uuid.NewString()
 
 	metadata := map[string]string{"file_id": fileID}
@@ -203,7 +205,7 @@ func TestUploadProtos(t *testing.T) {
 	req, err := netkit.NewUploadRequest(ctx, "/proto/upload", fileContents, metadata)
 	require.NoError(t, err)
 
-	w := netkit.NewResponseRecorder()
+	w := httptest.NewRecorder()
 	app.kit.ServeHTTP(w, req)
 	require.Equal(t, http.StatusOK, w.Code)
 

@@ -1,4 +1,4 @@
-package api
+package test
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func parseJSONFileToMap(t *testing.T, filePath string) types.Map {
+func ParseJSONFileToMap(t *testing.T, filePath string) types.Map {
 	rawJSON, err := os.ReadFile(filePath)
 	require.NoError(t, err)
 

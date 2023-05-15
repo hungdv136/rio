@@ -91,7 +91,7 @@ func (f *logger) WithContextualValues(ctx context.Context, keysAndValues ...inte
 		f.rs = &l
 	}
 
-	ctx = ContextFunc(ctx)
+	ctx = UnwrapContext(ctx)
 	return rs.Ctx(ctx).With().Fields(keysAndValues).Logger().WithContext(ctx)
 }
 
@@ -100,7 +100,7 @@ func (f *logger) getLogger(ctx context.Context) *zerolog.Logger {
 		return f.rs
 	}
 
-	return rs.Ctx(ContextFunc(ctx))
+	return rs.Ctx(UnwrapContext(ctx))
 }
 
 func (f *logger) msg(e *zerolog.Event, v ...interface{}) {
