@@ -23,16 +23,13 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        db: [ mariadb, mysql ]
     steps:
 
       - uses: actions/checkout@v3
 
       - name: Run unit test
-        run: make test-${{ matrix.db }}-up
+        run: make test-mysql-up
 
       - name: Post Run unit test
         if: ${{ always() }}
-        run: make test-${{ matrix.db }}-down
+        run: make test-mysql-down

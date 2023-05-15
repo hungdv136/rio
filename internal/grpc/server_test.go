@@ -8,8 +8,8 @@ import (
 	"github.com/hungdv136/rio"
 	"github.com/hungdv136/rio/internal/config"
 	"github.com/hungdv136/rio/internal/database"
-	fs "github.com/hungdv136/rio/internal/storage"
 	"github.com/hungdv136/rio/internal/log"
+	fs "github.com/hungdv136/rio/internal/storage"
 	"github.com/hungdv136/rio/internal/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -21,8 +21,10 @@ func TestServerEndToEnd(t *testing.T) {
 	t.Parallel()
 
 	ctx := log.SaveID(context.Background(), t.Name())
-	storageCfg := fs.LocalStorageConfig{StoragePath: "../testdata"}
+	storageCfg := fs.LocalStorageConfig{StoragePath: "../../testdata"}
 	storage := fs.NewLocalStorage(storageCfg)
+
+	// TODO: Consider to use mock instead of real database
 	stubStore, err := database.NewStubDBStore(ctx, config.NewDBConfig())
 	require.NoError(t, err)
 

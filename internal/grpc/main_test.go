@@ -9,7 +9,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	test.ResetDB(context.Background(), "..")
+	test.ResetDB(context.Background(), "../..")
 
 	code := m.Run()
 	os.Exit(code)

@@ -10,84 +10,6 @@ import (
 	"strings"
 )
 
-func getFloat64(value interface{}) (float64, bool) {
-	f64, ok := value.(float64)
-	if ok {
-		return f64, ok
-	}
-
-	f, ok := value.(float32)
-	if ok {
-		return float64(f), ok
-	}
-
-	i64, ok := value.(int64)
-	if ok {
-		return float64(i64), ok
-	}
-
-	i, ok := value.(int)
-	if ok {
-		return float64(i), ok
-	}
-
-	n, ok := value.(json.Number)
-	if ok {
-		value, err := n.Float64()
-		if err == nil {
-			return value, true
-		}
-		return 0, false
-	}
-
-	s, ok := value.(string)
-	if ok {
-		v, err := strconv.ParseFloat(s, 64)
-		if err == nil {
-			return v, true
-		}
-		return 0, false
-	}
-
-	return 0, false
-}
-
-func getInt64(value interface{}) (int64, bool) {
-	if i64, ok := value.(int64); ok {
-		return i64, ok
-	}
-
-	if i, ok := value.(int); ok {
-		return int64(i), ok
-	}
-
-	if n, ok := value.(json.Number); ok {
-		v, err := strconv.ParseInt(n.String(), 10, 64)
-		if err == nil {
-			return v, true
-		}
-		return 0, false
-	}
-
-	if f64, ok := value.(float64); ok {
-		return int64(f64), ok
-	}
-
-	if f32, ok := value.(float32); ok {
-		return int64(f32), ok
-	}
-
-	if s, ok := value.(string); ok {
-		v, err := strconv.ParseInt(s, 10, 64)
-		if err == nil {
-			return v, true
-		}
-		return 0, false
-	}
-
-	return 0, false
-}
-
 // Try to get length of object
 func getLen(x interface{}) (length int, ok bool) {
 	v := reflect.ValueOf(x)
@@ -181,6 +103,84 @@ func objectsAreEqual(expected, actual interface{}) bool {
 	}
 
 	return reflect.DeepEqual(expected, actual)
+}
+
+func getFloat64(value interface{}) (float64, bool) {
+	f64, ok := value.(float64)
+	if ok {
+		return f64, ok
+	}
+
+	f, ok := value.(float32)
+	if ok {
+		return float64(f), ok
+	}
+
+	i64, ok := value.(int64)
+	if ok {
+		return float64(i64), ok
+	}
+
+	i, ok := value.(int)
+	if ok {
+		return float64(i), ok
+	}
+
+	n, ok := value.(json.Number)
+	if ok {
+		value, err := n.Float64()
+		if err == nil {
+			return value, true
+		}
+		return 0, false
+	}
+
+	s, ok := value.(string)
+	if ok {
+		v, err := strconv.ParseFloat(s, 64)
+		if err == nil {
+			return v, true
+		}
+		return 0, false
+	}
+
+	return 0, false
+}
+
+func getInt64(value interface{}) (int64, bool) {
+	if i64, ok := value.(int64); ok {
+		return i64, ok
+	}
+
+	if i, ok := value.(int); ok {
+		return int64(i), ok
+	}
+
+	if n, ok := value.(json.Number); ok {
+		v, err := strconv.ParseInt(n.String(), 10, 64)
+		if err == nil {
+			return v, true
+		}
+		return 0, false
+	}
+
+	if f64, ok := value.(float64); ok {
+		return int64(f64), ok
+	}
+
+	if f32, ok := value.(float32); ok {
+		return int64(f32), ok
+	}
+
+	if s, ok := value.(string); ok {
+		v, err := strconv.ParseInt(s, 10, 64)
+		if err == nil {
+			return v, true
+		}
+		return 0, false
+	}
+
+	return 0, false
 }
 
 func cloneStringMap(m map[string]string) map[string]string {

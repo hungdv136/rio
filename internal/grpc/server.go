@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	"github.com/hungdv136/rio"
-	fs "github.com/hungdv136/rio/internal/storage"
 	"github.com/hungdv136/rio/internal/log"
+	fs "github.com/hungdv136/rio/internal/storage"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/encoding/gzip" // blank import for gzip decompress
 	"google.golang.org/grpc/reflection"

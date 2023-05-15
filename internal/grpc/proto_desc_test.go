@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	fs "github.com/hungdv136/rio/internal/storage"
 	"github.com/hungdv136/rio/internal/log"
+	fs "github.com/hungdv136/rio/internal/storage"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,7 +13,7 @@ func TestServiceDescriptor(t *testing.T) {
 	t.Parallel()
 
 	ctx := log.SaveID(context.Background(), t.Name())
-	storageCfg := fs.LocalStorageConfig{StoragePath: "../testdata"}
+	storageCfg := fs.LocalStorageConfig{StoragePath: "../../testdata"}
 	storage := fs.NewLocalStorage(storageCfg)
 
 	sd := NewServiceDescriptor(storage)
@@ -33,7 +33,7 @@ func TestDescriptor(t *testing.T) {
 
 	ctx := log.SaveID(context.Background(), t.Name())
 	s := NewDescriptor()
-	err := s.init(ctx, "../testdata/proto")
+	err := s.init(ctx, "../../testdata/proto")
 	require.NoError(t, err)
 	require.Len(t, s.sdMap, 1)
 

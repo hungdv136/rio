@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/hungdv136/rio"
 	"github.com/hungdv136/rio/internal/config"
-	"github.com/hungdv136/rio/internal/database"
+	"github.com/hungdv136/rio/internal/test/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,48 +16,61 @@ func TestStubCache_GetAll(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
 	cfg := config.NewConfig()
-	store, err := database.NewStubDBStore(ctx, cfg.DB)
-	require.NoError(t, err)
-
-	cache := NewStubCache(store, store, cfg)
 	namespace := uuid.NewString()
-	activeStub := rio.NewStub().For("POST", rio.Contains("animal/create")).WithNamespace(namespace)
-	inactiveStub := rio.NewStub().For("POST", rio.Contains("animal/create")).WithNamespace(namespace).WithInactive()
-	require.NoError(t, store.Create(ctx, activeStub, inactiveStub))
+	last := &rio.LastUpdatedRecord{}
+	stub := rio.NewStub().For("POST", rio.Contains("animal/create")).WithNamespace(namespace)
 
+	statusStore := mock.NewMockStatusStore(ctrl)
+	statusStore.EXPECT().GetLastUpdatedStub(gomock.Any(), namespace).Return(last, nil).Times(2)
+
+	stubStore := mock.NewMockStubStore(ctrl)
+	stubStore.EXPECT().GetAll(gomock.Any(), namespace).Return([]*rio.Stub{stub}, nil).Times(1)
+
+	cache := NewStubCache(stubStore, statusStore, cfg)
 	allStubs, err := cache.GetAll(ctx, namespace)
 	require.NoError(t, err)
 	require.Len(t, allStubs, 1)
-	require.Equal(t, activeStub.ID, allStubs[0].ID)
+	require.Equal(t, stub.ID, allStubs[0].ID)
 
+	// Assure that no request to db anymore
 	allStubs, err = cache.GetAll(ctx, namespace)
 	require.NoError(t, err)
 	require.Len(t, allStubs, 1)
-	require.Equal(t, activeStub.ID, allStubs[0].ID)
+	require.Equal(t, stub.ID, allStubs[0].ID)
 }
 
 func TestStubCache_GetProtos(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	cfg := config.NewConfig()
-	store, err := database.NewStubDBStore(ctx, cfg.DB)
-	require.NoError(t, err)
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
 
-	cache := NewStubCache(store, store, cfg)
+	cfg := config.NewConfig()
+	last := &rio.LastUpdatedRecord{}
 	proto := &rio.Proto{
 		Name:    uuid.NewString(),
 		FileID:  uuid.NewString(),
 		Methods: []string{uuid.NewString(), uuid.NewString()},
 	}
-	require.NoError(t, store.CreateProto(ctx, proto))
 
-	createdProtos, err := cache.GetProtos(ctx)
+	statusStore := mock.NewMockStatusStore(ctrl)
+	statusStore.EXPECT().GetLastUpdatedProto(gomock.Any()).Return(last, nil).Times(2)
+
+	stubStore := mock.NewMockStubStore(ctrl)
+	stubStore.EXPECT().GetProtos(gomock.Any()).Return([]*rio.Proto{proto}, nil).Times(1)
+
+	cache := NewStubCache(stubStore, statusStore, cfg)
+
+	gotProtos, err := cache.GetProtos(ctx)
 	require.NoError(t, err)
-	require.NotEmpty(t, createdProtos)
+	require.NotEmpty(t, gotProtos)
 
-	for _, p := range createdProtos {
+	for _, p := range gotProtos {
 		if p.ID == proto.ID {
 			require.Equal(t, proto.Name, p.Name)
 			require.Equal(t, proto.FileID, p.FileID)
@@ -64,7 +78,8 @@ func TestStubCache_GetProtos(t *testing.T) {
 		}
 	}
 
-	createdProtos, err = cache.GetProtos(ctx)
+	// Assure that no request to db anymore
+	gotProtos, err = cache.GetProtos(ctx)
 	require.NoError(t, err)
-	require.NotEmpty(t, createdProtos)
+	require.NotEmpty(t, gotProtos)
 }

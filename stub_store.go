@@ -1,5 +1,7 @@
 package rio
 
+//go:generate mockgen -source stub_store.go -destination internal/test/mock/stub_store.go -package mock
+
 import (
 	"context"
 	"sync"

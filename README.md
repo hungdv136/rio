@@ -1,4 +1,4 @@
-# A lightweight declarative HTTP mocking framework
+# A lightweight declarative HTTP mocking framework in Golang
 
 ![ci](https://github.com/hungdv136/rio/workflows/ci/badge.svg)
 
@@ -52,13 +52,13 @@
 
 ## Introduction
 
-Rio is a declarative HTTP/gPRC mocking framework for unit and integration test 
+Rio is an open source declarative HTTP/gPRC mocking framework for unit and integration test 
 
 ## How it works
 
 ![Workflow](docs/flow.png)
 
-## How to use in unit test
+## How to use in unit test for Golang
 
 Suppose that we want to test a function that calls API and parse the response data as the following example
 
@@ -90,11 +90,13 @@ func CallAPI(ctx context.Context, rootURL string, input map[string]interface{}) 
 }
 ```
 
-We can use `Rio` to mock the HTTP response as the following example
+Install
 
 ```bash
 go get github.com/hungdv136/rio@latest
 ```
+
+Write unit test with Golang
 
 ```go 
 func TestCallAPI(t *testing.T) {
@@ -121,7 +123,6 @@ func TestCallAPI(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, returnedBody, resData)
 }
-
 ```
 
 [Examples](https://github.com/hungdv136/rio_examples)
@@ -130,7 +131,7 @@ func TestCallAPI(t *testing.T) {
 
 Suppose that we want to test (manual or automation) an API that calls an external API by simulating a mock response for that external API
 
-### Deploy the `Rio` as a stand-alone service
+### Deploy `Rio` as a stand-alone service
 
 See [deploy](#how-to-deploy). After deployed, Rio can be accessed by other services via a domain, for example `http://rio-domain`
 
@@ -140,18 +141,17 @@ Go to ENV management system to change the root URL to the mock server with the f
 
 ### Perform manual test case 
 
-1. [Use Postman to submit stub](#create-stubs-using-postman)
+1. [Use Postman to submit stubs](#create-stubs-using-postman)
 2. Using Postman to perform manual test 
 
-### Write a automation test case with Golang
+### Write an automation test case with Golang
 
 1. Create a new server
 
 This struct is used to connect with the remote server that we have deployed above, so we should provide the root url of that mock server when initializing the remote server struct
 
 ```go
-server := rio.NewRemoteServer(rootUrl)
-defer server.Close()
+server := rio.NewRemoteServerWithReporter(t, rootUrl)
 ```
 
 2. Define a stub
@@ -164,19 +164,17 @@ stub := rio.NewStub().
 		WithQuery("search_term", rio.EqualTo(uuid.NewString())).
 		WithCookie("SESSION_ID", rio.EqualTo(uuid.NewString())).
 		WillReturn(rio.NewResponse().WithBody(rio.MapToJSON(resData))).
-        Send(server)
+    Send(ctx, server)
 ```
 
-In the above example, the stub will be pushed to remote server via `stub/create_many` API. This should be done before making a request to the external service (A service will be tested, for example: PIT, SI, ...). Since the root url of the external service is switched to parrot service, the request will be routed to parrot service. Once a request comes, a generic handler in the remote server will validate the following information
+In the above example, the stub will be pushed to remote server via `stub/create_many` API. This should be done before performing a request to the test target service. Since the root url of the external service is switched to `Rio` service, the request will be routed to `Rio` service. Once a request comes, a generic handler in remote server will validate the following information
 
 - Validate method GET
 - Validate whether request's path contains `animal/create`
 - Validate query string `search_term` whether its value contains a predefined value
 - Validate X-Request-ID whether its value equals to a predefined value
 - Validate cookie SESSION_ID whether its value equals to a predefined value
-- If these conditions are matched, then return
-
-See the following section if you want to use Postman to submit stubs [Create stubs using Postman](#create-stubs-using-postman)
+- If these conditions are matched, then return with predefined response
 
 ## Request Matching
 

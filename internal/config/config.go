@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"strconv"
 	"time"
 
 	fs "github.com/hungdv136/rio/internal/storage"
@@ -48,39 +50,73 @@ type Config struct {
 
 func NewConfig() *Config {
 	return &Config{
-		ServerAddress:      serverHost + ":" + EV("SERVER_PORT", serverPort),
+		ServerAddress:      serverHost + ":" + EVString("SERVER_PORT", serverPort),
 		DB:                 NewDBConfig(),
 		FileStorageType:    getStorageType(),
 		FileStorage:        getFileStorageConfig(),
-		StubCacheTTL:       EV("STUB_CACHE_TTL", time.Hour),
-		StubCacheStrategy:  EV("STUB_CACHE_STRATEGY", "default"),
-		BodyStoreThreshold: EV("BODY_STORE_THRESHOLD", 1<<20),
+		StubCacheTTL:       EVDuration("STUB_CACHE_TTL", time.Hour),
+		StubCacheStrategy:  EVString("STUB_CACHE_STRATEGY", "default"),
+		BodyStoreThreshold: EVInt("BODY_STORE_THRESHOLD", 1<<20),
 	}
 }
 
 // NewDBConfig loads db schema config
 func NewDBConfig() *MySQLConfig {
 	return &MySQLConfig{
-		Server:                    EV("DB_SERVER", dbServer),
-		Schema:                    EV("DB_SCHEMA", dbSchema),
-		User:                      EV("DB_USER", dbUser),
-		Password:                  EV("DB_PASSWORD", dbPassword),
-		ConnectionLifetimeSeconds: EV("DB_CONNECTION_LIFETIME_SECONDS", dbConnectionLifetimeSeconds),
-		MaxIdleConnections:        EV("DB_MAX_IDLE_CONNECTIONS", dbMaxIdleConnection),
-		MaxOpenConnections:        EV("DB_MAX_OPEN_CONNECTIONS", dbMaxOpenConnection),
+		Server:                    EVString("DB_SERVER", dbServer),
+		Schema:                    EVString("DB_SCHEMA", dbSchema),
+		User:                      EVString("DB_USER", dbUser),
+		Password:                  EVString("DB_PASSWORD", dbPassword),
+		ConnectionLifetimeSeconds: EVInt("DB_CONNECTION_LIFETIME_SECONDS", dbConnectionLifetimeSeconds),
+		MaxIdleConnections:        EVInt("DB_MAX_IDLE_CONNECTIONS", dbMaxIdleConnection),
+		MaxOpenConnections:        EVInt("DB_MAX_OPEN_CONNECTIONS", dbMaxOpenConnection),
 	}
 }
 
 func getFileStorageConfig() interface{} {
 	return fs.LocalStorageConfig{
-		StoragePath: EV("FILE_DIR", ""),
+		UseTempDir:  true,
+		StoragePath: EVString("FILE_DIR", "uploaded_files"),
 	}
 }
 
 func getStorageType() string {
-	return EV("FILE_STORAGE_TYPE", "local")
+	return EVString("FILE_STORAGE_TYPE", "local")
 }
 
-func EV[R any](name string, fallback R) R {
-	return fallback
+func EVString(name string, fallback string) string {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+
+	return v
+}
+
+func EVInt(name string, fallback int) int {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+
+	i, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	return int(i)
+}
+
+func EVDuration(name string, fallback time.Duration) time.Duration {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		panic(err)
+	}
+
+	return d
 }
