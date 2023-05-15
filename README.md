@@ -52,7 +52,16 @@
 
 ## Introduction
 
-Rio is an open source declarative HTTP/gPRC mocking framework for unit and integration test in Golang
+Rio is a declarative HTTP mocking library for unit test in Golang and HTTP/gPRC mock server for integration test. Using the same framework for both kind of tests can easily share stub definition schema/code between developers and testers
+
+## Features
+
+- Simple and fluent API for unit test in Golang 
+- DSL in YAML/JSON format for stub declarations
+- Can be deployed as mock server (HTTP and gRPC) for integration test
+- Supports persistent stubs to database with caching to improve performance
+- Flexible for matching request by method, URL params, headers, cookies and bodies
+- Dynamic response with go-template
 
 ## How it works
 
@@ -104,7 +113,7 @@ func TestCallAPI(t *testing.T) {
 
 	ctx := context.Background()
 
-  // Initialize a mock server 
+  // Initialize a mock server
 	server := rio.NewLocalServerWithReporter(t)
 
 	animalName := uuid.NewString()
@@ -321,6 +330,21 @@ NewStub().WithRequestBody(URLEncodedBody("CustomerID", EqualTo("352461777")))
 }
 ```
 
+### Matching Operators
+
+See [operator](https://github.com/hungdv136/rio/blob/main/operator.go) for supported operators which can be used for any matching types including method, url, headers. cookies and bodies
+
+| DSL | Golang | Description |
+| --- | ------ | ----------- |
+| contains | rio.Contains | Checks whether actual value contains given value in parameter |
+| not_contains | rio.NotContains | Checks whether actual value contains given value in parameter |
+| regex | rio.Regex | Checks whether actual value matches with given regex in parameter |
+| equal_to | rio.EqualTo | Determines if two objects are considered equal. Works as require.Equal |
+| start_with | rio.StartWith | Tests whether the string begins with prefix. Support string only |
+| end_with | rio.EndWith | Tests whether the string begins with prefix. Support string only |
+| length | rio.Length | Checks length of object. Support string or array |
+| empty | rio.Empty | Check whether the specified object is considered empty. Works as require.Empty |
+| not_empty | rio.NotEmpty | Check whether the specified object is considered not empty. Works as require.NotEmpty |
 
 ## Response Definition
 
