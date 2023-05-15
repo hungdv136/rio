@@ -44,7 +44,7 @@ func (app *App) handleCreate(ctx *gin.Context) {
 	}
 
 	if len(params.Stubs) == 0 {
-		SendJSON(ctx, http.StatusBadRequest, VedictMissingParameters, "missing parameters", types.Map{})
+		SendJSON(ctx, http.StatusBadRequest, VerdictMissingParameters, "missing parameters", types.Map{})
 		return
 	}
 

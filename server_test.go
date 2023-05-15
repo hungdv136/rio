@@ -7,10 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hungdv136/rio/internal/log"
-	"github.com/hungdv136/rio/internal/netkit"
-
 	"github.com/google/uuid"
+	"github.com/hungdv136/rio/internal/netkit"
 	"github.com/hungdv136/rio/internal/types"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +16,7 @@ import (
 func TestLocalServer_EndToEnd(t *testing.T) {
 	t.Parallel()
 
-	ctx := log.SaveID(context.Background(), t.Name())
+	ctx := context.Background()
 	server := NewLocalServerWithReporter(t)
 
 	animalName := uuid.NewString()

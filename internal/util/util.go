@@ -1,6 +1,11 @@
 package util
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+
+	"github.com/hungdv136/rio/internal/log"
+)
 
 // ToArrayString converts from array of interface{} to array of string
 func ToArrayString(a []interface{}) ([]string, bool) {
@@ -34,4 +39,11 @@ func ArrayContains[R comparable](a []R, v R) bool {
 	}
 
 	return false
+}
+
+// CloseSilently closes and write log if an error occurs
+func CloseSilently(ctx context.Context, close func() error) {
+	if err := close(); err != nil {
+		log.Error(ctx, "cannot close", err)
+	}
 }

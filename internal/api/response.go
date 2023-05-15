@@ -12,7 +12,7 @@ import (
 const (
 	VerdictSuccess           = "success"
 	VerdictFailure           = "failure"
-	VedictMissingParameters  = "missing_parameters"
+	VerdictMissingParameters = "missing_parameters"
 	VerdictInvalidParameters = "invalid_parameters"
 )
 

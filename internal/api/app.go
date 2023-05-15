@@ -8,10 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hungdv136/rio"
 	"github.com/hungdv136/rio/internal/config"
-	fs "github.com/hungdv136/rio/internal/storage"
 	"github.com/hungdv136/rio/internal/log"
 	"github.com/hungdv136/rio/internal/setup"
+	fs "github.com/hungdv136/rio/internal/storage"
 )
+
+type AppOption func(*App)
 
 // App defines app interface
 type App struct {
@@ -22,7 +24,7 @@ type App struct {
 }
 
 // NewApp returns new app
-func NewApp(ctx context.Context, config *config.Config) (*App, error) {
+func NewApp(ctx context.Context, config *config.Config, options ...AppOption) (*App, error) {
 	stubStore, err := setup.ProvideStubStore(ctx, config)
 	if err != nil {
 		return nil, err
@@ -38,6 +40,10 @@ func NewApp(ctx context.Context, config *config.Config) (*App, error) {
 		stubStore:   stubStore,
 		fileStorage: fileStorage,
 		kit:         gin.New(),
+	}
+
+	for _, optionFunc := range options {
+		optionFunc(app)
 	}
 
 	app.setup()

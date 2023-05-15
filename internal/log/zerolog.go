@@ -20,10 +20,7 @@ const (
 	logFlags = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
 )
 
-// Compile-time assertion to make sure Logger implements logger.Logger
-var _ Logger = (*logger)(nil)
-
-// Setup setup logger
+// Setup setups logger
 func Setup(module string, writer io.Writer) {
 	rs.Logger = zerolog.New(writer).With().Str("service", module).Timestamp().Logger()
 	defaultContextLogger := zerolog.New(writer).With().Str("service", module).Timestamp().Logger()

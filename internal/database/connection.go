@@ -72,7 +72,7 @@ func Disconnect(ctx context.Context, db *gorm.DB) error {
 	}
 
 	if err := sqlDB.Close(); err != nil {
-		log.Error(ctx, err)
+		log.Error(ctx, "cannot close", err)
 		return err
 	}
 
@@ -83,7 +83,7 @@ func Disconnect(ctx context.Context, db *gorm.DB) error {
 func ExecuteFileScript(ctx context.Context, db *gorm.DB, filePath string) error {
 	migrationSQL, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Error(ctx, err)
+		log.Error(ctx, "cannot read sql script", err, filePath)
 		return err
 	}
 
@@ -92,6 +92,6 @@ func ExecuteFileScript(ctx context.Context, db *gorm.DB, filePath string) error 
 		return err
 	}
 
-	log.Info(ctx, "migrated", filePath)
+	log.Info(ctx, "executed sql script", filePath)
 	return nil
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHandler_rewritePath(t *testing.T) {
+func TestHandler_RewritePath(t *testing.T) {
 	t.Parallel()
 
 	namespace := uuid.NewString()

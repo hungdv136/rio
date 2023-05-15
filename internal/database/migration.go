@@ -16,9 +16,9 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func Migrate(ctx context.Context, config *config.MySQLConfig, migrationDirectory string) error {
+func Migrate(ctx context.Context, config *config.MySQLConfig, dir string) error {
 	connectionString := fmt.Sprintf("mysql://%s", resolveDatabaseConnectionURL(config))
-	m, err := migrate.New(fmt.Sprintf("file://%s", migrationDirectory), connectionString)
+	m, err := migrate.New(fmt.Sprintf("file://%s", dir), connectionString)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func Migrate(ctx context.Context, config *config.MySQLConfig, migrationDirectory
 
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
-			log.Info(context.Background(), "no migration needed")
+			log.Info(ctx, "no migration needed")
 			return nil
 		}
 

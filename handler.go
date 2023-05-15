@@ -56,10 +56,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	incomeRequest := Capture(r, h.bodyStoreThreshold).WithNamespace(h.namespace)
 
-	defer func() {
-		_ = h.stubStore.CreateIncomingRequest(ctx, incomeRequest)
-		log.Info(ctx, "saved income request")
-	}()
+	defer h.stubStore.CreateIncomingRequest(ctx, incomeRequest)
 
 	stubs, err := h.stubStore.GetAll(ctx, h.namespace)
 	if err != nil {

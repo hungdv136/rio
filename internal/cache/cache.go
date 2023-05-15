@@ -9,7 +9,8 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 )
 
-// Verify invalidating cache strategy
+// The default cache invalidation strategy
+// which verifies last updated time in db with updated time in cache
 // - Add new or update stub: update time of new records are greater than cached value
 // - Delete a record: Not supported yet, only update to inactive status
 // - Cleanup: Database is empty, so the last record is different with store value

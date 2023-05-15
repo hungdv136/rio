@@ -9,12 +9,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hungdv136/rio/internal/types"
+	"github.com/hungdv136/rio/internal/util"
+
 	"github.com/google/uuid"
 	"github.com/hungdv136/rio/internal/log"
 )
 
 var defaultClient = &http.Client{
-	Timeout: 32 * time.Second,
+	Timeout: 30 * time.Second,
 	Transport: &http.Transport{
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true}, // nolint:gosec
 		IdleConnTimeout:     8 * time.Second,
@@ -74,22 +77,51 @@ func NewUploadRequest(ctx context.Context, url string, file []byte, fields map[s
 	return req.WithContext(ctx), nil
 }
 
-// PostJSON executes request with POST method and JSON as body, then parse response
-// Body is structure of response body
-func PostJSON[Body any](ctx context.Context, url string, body interface{}) (*Response[Body], error) {
+// NewJSONRequest creates new request with JSON body
+func NewJSONRequest(ctx context.Context, method, url string, body interface{}) (*http.Request, error) {
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {
 		log.Error(ctx, "cannot marshal body", err)
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		log.Error(ctx, err)
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
+}
+
+// NewQueryRequest creates request with query strings
+func NewQueryRequest(ctx context.Context, method, url string, queries types.Map) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		log.Error(ctx, "cannot create request", err)
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	if len(queries) > 0 {
+		q := req.URL.Query()
+		for key, val := range queries {
+			q.Add(key, util.ToString(val))
+		}
+		req.URL.RawQuery = q.Encode()
+	}
+
+	return req, nil
+}
+
+// PostJSON executes request with POST method and JSON as body, then parse response
+// Body is structure of response body
+func PostJSON[Body any](ctx context.Context, url string, body interface{}) (*Response[Body], error) {
+	req, err := NewJSONRequest(ctx, http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+
 	res, err := SendRequest(req)
 	if err != nil {
 		return nil, err
@@ -101,9 +133,8 @@ func PostJSON[Body any](ctx context.Context, url string, body interface{}) (*Res
 // Get executes request with GET method
 // Body is structure of response body
 func Get[Body any](ctx context.Context, url string) (*Response[Body], error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := NewQueryRequest(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		log.Error(ctx, "cannot create request", err)
 		return nil, err
 	}
 

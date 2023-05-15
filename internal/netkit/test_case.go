@@ -1,11 +1,16 @@
-package api
+package netkit
 
 import (
+	"context"
+	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hungdv136/rio/internal/log"
 	"github.com/hungdv136/rio/internal/types"
+	"github.com/stretchr/testify/require"
 )
 
 // TestCase is a test case for HTTP request
@@ -43,39 +48,36 @@ func NewTestCase(
 	}
 }
 
-// Execute execute test case with gin engine
-func (tc *TestCase) Execute(t *testing.T, engine *gin.Engine) types.Map {
-	// ctx := log.SaveID(context.Background(), tc.Name)
+func (tc *TestCase) buildRequest(ctx context.Context) (*http.Request, error) {
+	if strings.EqualFold(tc.Method, http.MethodGet) {
+		return NewQueryRequest(ctx, tc.Method, tc.Path, tc.Params)
+	}
 
-	// var (
-	// 	req *http.Request
-	// 	err error
-	// )
+	return NewJSONRequest(ctx, tc.Method, tc.Path, tc.Params)
+}
 
-	// if tc.Method == http.MethodPost {
-	// 	req, err = http.NewRequestWithContext(ctx, tc.Method, tc.Path, nil)
-	// 	require.NoError(t, err)
-	// } else {
+// ExecuteTestCase execute test case with gin engine
+func ExecuteTestCase[Body any](t *testing.T, tc *TestCase, engine *gin.Engine) *Response[InternalBody[Body]] {
+	ctx := log.SaveID(context.Background(), tc.Name)
+	req, err := tc.buildRequest(ctx)
+	require.NoError(t, err)
 
-	// }
+	recorder := NewResponseRecorder()
+	engine.ServeHTTP(recorder, req)
+	result := recorder.Result()
+	defer result.Body.Close()
 
-	// w := NewResponseRecorder()
-	// engine.ServeHTTP(w, req)
-	// result := w.Result() // nolint:bodyclose
+	require.Equal(t, tc.ExpectStatus, result.StatusCode)
 
-	// require.Equal(t, tc.ExpectStatus, result.StatusCode)
-	// for k, v := range tc.ExpectHeaders {
-	// 	require.Equal(t, v, result.Header.Get(k))
-	// }
+	for k, v := range tc.ExpectHeaders {
+		require.Equal(t, v, result.Header.Get(k))
+	}
 
-	// resData := types.Map{}
-	// err = httpkit.ParseResponse(ctx, result, &resData)
-	// require.NoError(t, err)
-	// require.Equal(t, tc.ExpectVerdict, resData.ForceString("verdict"))
+	res, err := ParseResponse[InternalBody[Body]](ctx, result)
+	require.NoError(t, err)
+	require.Equal(t, tc.ExpectVerdict, res.Body.Verdict)
 
-	// return resData
-
-	return types.Map{}
+	return res
 }
 
 // ResponseRecorder wraps recorder to support CloseNotify

@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// The stub schema version
 const LatestVersion = 3
 
 var (

@@ -1,5 +1,7 @@
 package storage
 
+//go:generate mockgen -source file-storage.go -destination ../test/mock/file-storage.go -package mock
+
 import (
 	"bytes"
 	"context"

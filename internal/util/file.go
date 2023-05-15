@@ -101,9 +101,3 @@ func SanitizePath(ctx context.Context, d, t string) (v string, err error) {
 	log.Error(ctx, err)
 	return "", err
 }
-
-func CloseSilently(ctx context.Context, close func() error) {
-	if err := close(); err != nil {
-		log.Error(ctx, "cannot close", err)
-	}
-}

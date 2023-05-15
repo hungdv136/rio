@@ -5,13 +5,13 @@ import (
 	"os"
 )
 
-// Logger defines the default logger
+// Defines the default logger
 var defaultLogger Logger = func() Logger {
 	Setup("rio", os.Stdout)
 	return NewLogger().AddCallDepth(1)
 }()
 
-// Logger define interface for logger
+// Logger defines interface for logger
 type Logger interface {
 	Info(ctx context.Context, v ...interface{})
 	Warn(ctx context.Context, v ...interface{})
