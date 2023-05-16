@@ -58,11 +58,12 @@ Rio is a declarative HTTP mocking library for unit test in Golang and HTTP/gPRC 
 
 - Simple and fluent API for unit test in Golang 
 - DSL in YAML/JSON format for stub declarations
+- Supports wide-range response types (html, xml, json and binary)
 - Can be deployed as mock server (HTTP and gRPC) for integration test
 - Supports persistent stubs to database with caching to improve performance
 - Flexible for matching request by method, URL params, headers, cookies and bodies
 - Dynamic response with go-template
-- Automatically generates stub with reserve proxy mode
+- Automatically generates stubs with reserve proxy mode
 - Ability to run tests in parallel to improve speed
 
 ## How it works
@@ -559,6 +560,8 @@ defer res.Body.Close()
 
 ## Create stubs using Postman
 
+See [Swagger](docs/swagger.yaml) for API specifications
+
 ### JSON Format 
 
 The stubs (matching rules and the expected response) can be created through Rest API `stubs/create_many`, the below is example of body payload
@@ -916,10 +919,6 @@ Supported databases: MySQL or MariaDB
 DB_SERVER=0.0.0.0:3306
 DB_USER=<user>
 DB_PASSWORD=<password>
-DB_SCHEMA=rio_services
-DB_CONNECTION_LIFETIME_SECONDS=300
-DB_MAX_IDLE_CONNECTIONS=50
-DB_MAX_OPEN_CONNECTIONS=100
 ```
 
 ### Deploy file storage 
@@ -933,10 +932,6 @@ FILE_STORAGE_TYPE=s3
 S3_ACCESS_KEY_ID=
 S3_SECRET_ACCESS_KEY=
 S3_REGION=ap-southeast-1
-S3_BUCKET=rio
-S3_DIRECTORY=rio_files
-S3_PRESIGN_URL_EXPIRATION_DURATION=24h
-S3_MAX_KEYS=100000
 ```
 
 #### Use GCS
@@ -944,10 +939,6 @@ S3_MAX_KEYS=100000
 ```env
 FILE_STORAGE_TYPE=gcs
 GCS_CREDENTIALS_FILE=<credential-file-path>
-GCS_BUCKET=rio
-GCS_DIRECTORYrio_data_files
-GCS_MAX_KEYS=100000
-GCS_PRESIGN_URL_EXPIRATION_DURATION=24h
 ```
 
 ### Deploy HTTP mock server
@@ -968,3 +959,29 @@ STUB_CACHE_STRATEGY=default
 ```
 
 The default strategy cache stubs and protos in local memory and invalidate if there is any update/insert/delete in database. If we want to do performance testing, then can change `STUB_CACHE_STRATEGY` to `aside`
+
+## Development
+
+There are few integration tests in these packages `internal/database`, `internal/api` and `internal/grpc` those are integrated with real database. Run the below command to setup database for testing
+
+```bash
+make dev-up
+```
+
+To cleanup
+
+```bash
+make dev-down
+```
+
+Run all tests
+
+```bash
+make test
+```
+
+Run the below command to format codes, check lint and run tests before commit codes
+
+```bash
+make all
+```
