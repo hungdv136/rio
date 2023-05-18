@@ -960,6 +960,8 @@ STUB_CACHE_STRATEGY=default
 
 The default strategy cache stubs and protos in local memory and invalidate if there is any update/insert/delete in database. If we want to do performance testing, then can change `STUB_CACHE_STRATEGY` to `aside`
 
+[Docker Compose](https://hub.docker.com/repository/docker/hungdv136/rio/general)
+
 ## Development
 
 There are few integration tests in these packages `internal/database`, `internal/api` and `internal/grpc` those are integrated with real database. Run the below command to setup database for testing
