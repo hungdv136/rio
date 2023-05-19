@@ -198,6 +198,23 @@ func NewResponseFromHTTP(res *http.Response) *Response {
 	return r
 }
 
+// JSONResponse is convenient constructor to initialize response with JSON body
+// The input parameter will be decoded to JSON
+func JSONResponse(body interface{}) *Response {
+	return NewResponse().WithBody(MustToJSON(body))
+}
+
+// XMLResponse is convenient constructor to initialize response with XML body
+// The input parameter will be decoded to XML
+func XMLResponse(body interface{}) *Response {
+	return NewResponse().WithBody(MustToXML(body))
+}
+
+// HTMLResponse is convenient constructor to initialize response with htnl body
+func HTMLResponse(html string) *Response {
+	return NewResponse().WithBody(HTMLContent(html))
+}
+
 // Clone clones response and its properties
 func (r *Response) Clone() *Response {
 	nr := &Response{
