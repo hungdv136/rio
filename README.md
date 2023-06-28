@@ -4,7 +4,7 @@
 
 - [A lightweight declarative HTTP mocking framework](#a-lightweight-declarative-http-mocking-framework)
   - [How it works](#how-it-works)
-  - [How to use in unit test](#how-to-use-in-unit-test)
+  - [How to use in unit test for Golang](#how-to-use-in-unit-test-for-golang)
   - [How to use in integration test](#how-to-use-in-integration-test)
     - [Change the root url of the service to mock server](#change-the-root-url-of-the-service-to-mock-server)
     - [Write a test case](#write-a-test-case)
@@ -115,29 +115,52 @@ func TestCallAPI(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-
-  // Initialize a mock server
 	server := rio.NewLocalServerWithReporter(t)
 
-	animalName := uuid.NewString()
-	returnedBody := map[string]interface{}{"id": uuid.NewString()}
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 
-  // Create a stub
-	require.NoError(t, rio.NewStub().
-		// Verify method and path
-		For("POST", rio.EndWith("/animal")).
-		// Verify if the request body is composed correctly
-		WithRequestBody(rio.BodyJSONPath("$.name", rio.EqualTo(animalName))).
-		// Response with 200 and json
-		WillReturn(rio.NewResponse().WithBody(rio.MustToJSON(returnedBody))).
-		// Submit stub to mock server
-		Send(ctx, server))
+		animalName := uuid.NewString()
+		returnedBody := map[string]interface{}{"id": uuid.NewString()}
 
-	input := map[string]interface{}{"name": animalName}
-	resData, err := CallAPI(ctx, server.GetURL(ctx), input)
-	require.NoError(t, err)
-	require.Equal(t, returnedBody, resData)
+		require.NoError(t, rio.NewStub().
+			// Verify method and path
+			For("POST", rio.EndWith("/animal")).
+			// Verify if the request body is composed correctly
+			WithRequestBody(rio.BodyJSONPath("$.name", rio.EqualTo(animalName))).
+			// Response with 200 (default) and JSON
+			WillReturn(rio.JSONResponse(returnedBody)).
+			// Submit stub to mock server
+			Send(ctx, server))
+
+		input := map[string]interface{}{"name": animalName}
+		resData, err := CallAPI(ctx, server.GetURL(ctx), input)
+		require.NoError(t, err)
+		require.Equal(t, returnedBody, resData)
+	})
+
+	t.Run("bad_request", func(t *testing.T) {
+		t.Parallel()
+
+		animalName := uuid.NewString()
+
+		require.NoError(t, rio.NewStub().
+			// Verify method and path
+			For("POST", rio.EndWith("/animal")).
+			// Verify if the request body is composed correctly
+			WithRequestBody(rio.BodyJSONPath("$.name", rio.EqualTo(animalName))).
+			// Response with status 400
+			WillReturn(rio.NewResponse().WithStatusCode(400)).
+			// Submit stub to mock server
+			Send(ctx, server))
+
+		input := map[string]interface{}{"name": animalName}
+		resData, err := CallAPI(ctx, server.GetURL(ctx), input)
+		require.Error(t, err)
+		require.Empty(t, resData)
+	})
 }
+
 ```
 
 [Examples](https://github.com/hungdv136/rio_examples)
