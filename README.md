@@ -4,7 +4,7 @@
 
 - [A lightweight declarative HTTP mocking framework](#a-lightweight-declarative-http-mocking-framework)
   - [How it works](#how-it-works)
-  - [How to use in unit test for Golang](#how-to-use-in-unit-test-for-golamg)
+  - [How to use in unit test for Golang](#how-to-use-in-unit-test-for-golang)
   - [How to use in integration test](#how-to-use-in-integration-test)
     - [Change the root url of the service to mock server](#change-the-root-url-of-the-service-to-mock-server)
     - [Write a test case](#write-a-test-case)
