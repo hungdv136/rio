@@ -2,12 +2,16 @@
 
 ![ci](https://github.com/hungdv136/rio/workflows/ci/badge.svg)
 
-- [A lightweight declarative HTTP mocking framework](#a-lightweight-declarative-http-mocking-framework)
+- [A lightweight declarative HTTP mocking framework in Golang](#a-lightweight-declarative-http-mocking-framework-in-golang)
+  - [Introduction](#introduction)
+  - [Features](#features)
   - [How it works](#how-it-works)
   - [How to use in unit test for Golang](#how-to-use-in-unit-test-for-golang)
   - [How to use in integration test](#how-to-use-in-integration-test)
-    - [Change the root url of the service to mock server](#change-the-root-url-of-the-service-to-mock-server)
-    - [Write a test case](#write-a-test-case)
+    - [Deploy `Rio` as a stand-alone service](#deploy-rio-as-a-stand-alone-service)
+    - [Change the root url configuration of the external to mock server](#change-the-root-url-configuration-of-the-external-to-mock-server)
+    - [Perform manual test case](#perform-manual-test-case)
+    - [Write an automation test case with Golang](#write-an-automation-test-case-with-golang)
   - [Request Matching](#request-matching)
     - [Match by method and url](#match-by-method-and-url)
     - [Match by query parameter](#match-by-query-parameter)
@@ -17,6 +21,7 @@
       - [XML Path](#xml-path)
       - [Multipart](#multipart)
       - [URL Encoded Form (application/x-www-form-urlencoded)](#url-encoded-form-applicationx-www-form-urlencoded)
+    - [Matching Operators](#matching-operators)
   - [Response Definition](#response-definition)
     - [Status Code, Cookies, Header](#status-code-cookies-header)
     - [Response body](#response-body)
@@ -48,7 +53,10 @@
       - [Use GCS](#use-gcs)
     - [Deploy HTTP mock server](#deploy-http-mock-server)
     - [Deploy GRPC mock server](#deploy-grpc-mock-server)
-  - [Configure Cache](#configure-cache)
+    - [Configure cache](#configure-cache)
+  - [Contribution](#contribution)
+    - [Run test](#run-test)
+    - [Commit Changes](#commit-changes)
 
 ## Introduction
 
@@ -180,7 +188,7 @@ Go to ENV management system to change the root URL to the mock server with the f
 ### Perform manual test case 
 
 1. [Use Postman to submit stubs](#create-stubs-using-postman)
-2. Use Postman to perform manual test 
+2. Use Postman to perform manual test with your API
 
 ### Write an automation test case with Golang
 
@@ -215,6 +223,8 @@ In the above example, the stub will be pushed to remote server via `stub/create_
 - If these conditions are matched, then return with predefined response
 
 ## Request Matching
+
+This is to verify incoming requests against predefined stubs. If all rules are matched, then the predefined response of matched stub will be responded
 
 ### Match by method and url
 
@@ -374,10 +384,29 @@ See [operator](https://github.com/hungdv136/rio/blob/main/operator.go) for suppo
 
 ## Response Definition
 
+Response can be defined using fluent functions WithXXX (Header, StatusCode, Cookie, Body) as the following example
+
+```go
+rio.NewResponse().WithStatusCode(400).WithHeader("KEY", "VALUE")
+```
+
+The below are convenient functions to create response with common response content types
+
+```go
+// JSON 
+rio.JSONReponse(body)
+
+// XML
+rio.XMLReponse(body)
+
+// HTML
+rio.HTMLReponse(body)
+```
+
 ### Status Code, Cookies, Header
 
 ```go
-resStub := NewResponse().WithHeader("X-REQUEST-HEADER", "HEADER_VALUE")
+resStub := NewResponse().WithHeader("X-REQUEST-HEADER", "HEADER_VALUE").WithStatusCode(400).WithCookie("KEY", "VALUE")
 NewStub().WithReturn(resStub)
 ```
 
@@ -404,11 +433,13 @@ NewStub().WithReturn(resStub)
 
 #### JSON
 
+Use JSONResponse to construct response with JSON (parameter can be map or struct)
+
 ```go
 err := NewStub().For("POST", Contains("animal/create")).
     WithHeader("X-REQUEST-ID", EqualTo(requestID)).
     WithRequestBody(BodyJSONPath("$.name", EqualTo(animalName))).
-    WillReturn(NewResponse().WithBody(MustStructToJSON(types.Map{"id": animalID}))).
+    WillReturn(JSONResponse(types.Map{"id": animalID})).
     Send(ctx, server)
 ```
 
@@ -428,11 +459,13 @@ err := NewStub().For("POST", Contains("animal/create")).
 
 #### XML 
 
+Use XMLResponse to construct response with XML
+
 ```go
 err := NewStub().For("POST", Contains("animal/create")).
     WithHeader("X-REQUEST-ID", EqualTo(requestID)).
     WithRequestBody(BodyJSONPath("$.name", EqualTo(animalName))).
-    WillReturn(NewResponse().WithBody(MustStructToXML(structVar))).
+    WillReturn(XMLResponse(structVar)).
     Send(ctx, server)
 ```
 
@@ -454,7 +487,7 @@ With XML data type, content must be encoded to base64 before submit stub as JSON
 err := NewStub().For("POST", Contains("animal/create")).
     WithHeader("X-REQUEST-ID", EqualTo(requestID)).
     WithRequestBody(BodyJSONPath("$.name", EqualTo(animalName))).
-    WillReturn(NewResponse().WithBody("text/html", []byte("<html></html>")).
+    WillReturn(HTMLResponse("<html></html>")).
     Send(ctx, server)
 ```
 
@@ -985,25 +1018,33 @@ The default strategy cache stubs and protos in local memory and invalidate if th
 
 [Docker Compose](https://hub.docker.com/repository/docker/hungdv136/rio/general)
 
-## Development
+## Contribution
 
-There are few integration tests in these packages `internal/database`, `internal/api` and `internal/grpc` those are integrated with real database. Run the below command to setup database for testing
+### Run test
+
+There are few integration tests in these packages `internal/database`, `internal/api` and `internal/grpc` those are integrated with real database. Follow the following step to setup environment and run tests
+
+1. Install docker
+
+2. Run the below command to setup database for testing
 
 ```bash
 make dev-up
 ```
 
-To cleanup
+3. Run all tests
+
+```bash
+make test
+```
+
+4. To cleanup testing environment
 
 ```bash
 make dev-down
 ```
 
-Run all tests
-
-```bash
-make test
-```
+### Commit Changes
 
 Run the below command to format codes, check lint and run tests before commit codes
 
