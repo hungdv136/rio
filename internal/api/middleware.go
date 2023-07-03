@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -27,6 +28,25 @@ func RequestIDMiddleware() gin.HandlerFunc {
 		ctx.Request = ctx.Request.WithContext(wrappedCtx)
 		ctx.Writer.Header().Set(rio.HeaderXRequestID, id)
 		ctx.Next()
+	}
+}
+
+// RequestTimeMiddleware logs request time
+func RequestTimeMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		startTime := time.Now()
+		ctx.Next()
+		runTime := time.Since(startTime)
+
+		log.Fields(ctx,
+			"method", ctx.Request.Method,
+			"path", ctx.Request.URL.Path,
+			"route_path", ctx.FullPath(),
+			"status_code", ctx.Writer.Status(),
+			"response_verdict", ctx.GetString("verdict"),
+			"response_message", ctx.GetString("message"),
+			"duration_ns", runTime.Nanoseconds(),
+		).Info(ctx)
 	}
 }
 

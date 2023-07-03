@@ -177,6 +177,8 @@ func TestCallAPI(t *testing.T) {
 
 Suppose that we want to test (manual or automation) an API that calls an external API by simulating a mock response for that external API. It can help us to create stable tests by isolating our test suites with external systems
 
+Check [this repository](https://github.com/hungdv136/rio-js) to see how to use Rio in integration test
+
 ### Deploy `Rio` as a stand-alone service
 
 See [deploy](#how-to-deploy). After deployed, Rio can be accessed by other services via a domain, for example `http://rio-domain`

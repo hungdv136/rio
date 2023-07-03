@@ -16,6 +16,8 @@ import (
 // @BasePath    /api/v1
 func main() {
 	gin.SetMode(gin.ReleaseMode)
+	api.SetupContext()
+
 	ctx := context.Background()
 	app, err := api.NewApp(ctx, config.NewConfig())
 	if err != nil {
