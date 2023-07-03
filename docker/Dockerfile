@@ -3,6 +3,8 @@ FROM golang:1.18 AS build
 RUN --mount=type=secret,id=GITHUB_TOKEN,required \
     git config --global url."https://$(cat /run/secrets/GITHUB_TOKEN):@github.com/".insteadOf "https://github.com/"
 
+RUN apt-get update && apt-get install -y wget curl
+
 WORKDIR /src
 
 COPY go.mod go.sum /src/
