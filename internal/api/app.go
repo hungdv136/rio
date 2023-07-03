@@ -65,6 +65,7 @@ func (app *App) Start(ctx context.Context) error {
 
 func (app *App) setup() {
 	app.kit.Use(RequestIDMiddleware())
+	app.kit.Use(RequestTimeMiddleware())
 	app.kit.Use(Recovery())
 	app.initRoutes()
 }
@@ -90,4 +91,16 @@ func (app *App) initRoutes() {
 			WithNamespace(namespace)
 		handler.Handle(ctx.Writer, ctx.Request)
 	})
+}
+
+// TODO: This is opinionated solution to register UnwrapContext
+func SetupContext() {
+	defaultFunc := log.UnwrapContext
+	log.UnwrapContext = func(ctx context.Context) context.Context {
+		if c, ok := ctx.(*gin.Context); ok {
+			return c.Request.Context()
+		}
+
+		return defaultFunc(ctx)
+	}
 }

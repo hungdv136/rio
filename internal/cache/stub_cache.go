@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	strategyAside = "aside"
+	strategyAside   = "aside"
+	strategyNoCache = "no_cache"
 )
 
 const (
@@ -27,6 +28,9 @@ func NewStubCache(sourceStore rio.StubStore, statusStore rio.StatusStore, cfg *c
 			stubCache:  newCache[rio.Stub](cfg.StubCacheTTL),
 			protoCache: newCache[rio.Proto](cfg.StubCacheTTL),
 		}
+
+	case strategyNoCache:
+		return sourceStore
 
 	default:
 		return &stubCache{
@@ -71,6 +75,11 @@ func (s *stubCache) GetAll(ctx context.Context, namespace string) ([]*rio.Stub, 
 	cacheItem := &cacheItem[rio.Stub]{last: last, items: stubs}
 	s.stubCache.SetDefault(key, cacheItem)
 
+	log.Info(ctx, "reloaded stub from db, #items", len(stubs))
+	if len(stubs) > 0 {
+		log.Info(ctx, "last_updated_at", stubs[0].CreatedAt)
+	}
+
 	return stubs, nil
 }
 
@@ -93,6 +102,7 @@ func (s *stubCache) GetProtos(ctx context.Context) ([]*rio.Proto, error) {
 
 	cacheItem := &cacheItem[rio.Proto]{last: last, items: protos}
 	s.protoCache.SetDefault(protoKey, cacheItem)
+	log.Info(ctx, "reloaded protos from db, #items", len(protos))
 
 	return protos, nil
 }
@@ -122,6 +132,7 @@ func (s *stubAsideCache) GetAll(ctx context.Context, namespace string) ([]*rio.S
 
 	cacheItem := &cacheItem[rio.Stub]{items: stubs}
 	s.stubCache.SetDefault(key, cacheItem)
+	log.Info(ctx, "reloaded stub from db, #items", len(stubs))
 
 	return stubs, nil
 }
@@ -139,6 +150,6 @@ func (s *stubAsideCache) GetProtos(ctx context.Context) ([]*rio.Proto, error) {
 
 	cacheItem := &cacheItem[rio.Proto]{items: protos}
 	s.protoCache.SetDefault(protoKey, cacheItem)
-
+	log.Info(ctx, "reloaded protos from db, #items", len(protos))
 	return protos, nil
 }

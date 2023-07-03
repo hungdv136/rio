@@ -20,6 +20,6 @@ func GetID(ctx context.Context) string {
 // Return a copy of parent in which the value associated with key is
 func SaveID(ctx context.Context, contextID string) context.Context {
 	ctx = context.WithValue(UnwrapContext(ctx), ctxKeyContextID, contextID)
-	WithContextualValues(ctx, "request_id", contextID)
+	ctx = WithContextualValues(ctx, "request_id", contextID)
 	return ctx
 }
