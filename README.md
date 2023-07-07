@@ -73,6 +73,7 @@ Rio is a declarative HTTP mocking library for unit test in Golang and HTTP/gPRC 
 - Dynamic response with go-template
 - Automatically generates stubs with reserve proxy mode
 - Ability to run tests in parallel to improve speed
+- Support SDK in Golang and TypeScript/Javascript
 
 ## How it works
 
@@ -116,7 +117,7 @@ Install
 go get github.com/hungdv136/rio@latest
 ```
 
-Write unit test with Golang
+Write unit test with Golang (NO deployment is required)
 
 ```go 
 func TestCallAPI(t *testing.T) {
@@ -177,7 +178,7 @@ func TestCallAPI(t *testing.T) {
 
 Suppose that we want to test (manual or automation) an API that calls an external API by simulating a mock response for that external API. It can help us to create stable tests by isolating our test suites with external systems
 
-[This repository](https://github.com/hungdv136/rio-js) illustrates how to use Rio to write integration tests in Javascript/TypeScript 
+Golang, TypeScript, Postman can be used to define and submit stubs to mock server. [This repository](https://github.com/hungdv136/rio-js) illustrates how to use Rio to write integration tests in Javascript/TypeScript
 
 ### Deploy `Rio` as a stand-alone service
 
@@ -234,6 +235,10 @@ This is to verify incoming requests against predefined stubs. If all rules are m
 NewStub().For("GET", Contains("/helloworld"))
 ```
 
+```ts
+new Stub("GET", Rule.contains("/helloworld"))
+```
+
 ```json
 {
   "request": {
@@ -250,6 +255,11 @@ NewStub().For("GET", Contains("/helloworld"))
 
 ```go
 NewStub().WithQuery("search_term", NotEmpty())
+```
+
+```ts
+new Stub("GET", Rule.contains("/helloworld"))
+  .withQuery("search_term", Rule.notEmpty())
 ```
 
 ```json
@@ -269,6 +279,11 @@ NewStub().WithQuery("search_term", NotEmpty())
 
 ```go
 NewStub().WithCookie("SESSION_ID", EqualTo("expected cookie value"))
+```
+
+```ts
+new Stub("GET", Rule.contains("/helloworld"))
+  .withCookie("SESSION_ID", Rule.equalsTo("expected cookie value"))
 ```
 
 ```json
@@ -291,6 +306,13 @@ NewStub().WithCookie("SESSION_ID", EqualTo("expected cookie value"))
 
 ```go
 NewStub().WithRequestBody(BodyJSONPath("$.name"), NotEmpty())
+```
+
+```ts
+new Stub('GET', Rule.endWith('/helloworld'))
+  .withRequestBody(
+    JSONPathRule("$.name", Rule.notEmpty())
+  )
 ```
 
 ```json
@@ -333,6 +355,13 @@ NewStub().WithRequestBody(BodyXMLPath("//book/title"), NotEmpty())
 NewStub().WithRequestBody(MultipartForm("field_name"), NotEmpty())
 ```
 
+```ts
+new Stub('GET', Rule.endWith('/helloworld'))
+  .withRequestBody(
+    MultiPartFormRule("field_name", Rule.notEmpty())
+  )
+```
+
 ```json
 {
   "request": {
@@ -351,6 +380,13 @@ NewStub().WithRequestBody(MultipartForm("field_name"), NotEmpty())
 
 ```go
 NewStub().WithRequestBody(URLEncodedBody("CustomerID", EqualTo("352461777")))
+```
+
+```ts
+new Stub('GET', Rule.endWith('/helloworld'))
+  .withRequestBody(
+    URLEncodedBodyRule("CustomerID", Rule.equalsTo("352461777"))
+  )
 ```
 
 ```json
@@ -392,6 +428,10 @@ Response can be defined using fluent functions WithXXX (Header, StatusCode, Cook
 rio.NewResponse().WithStatusCode(400).WithHeader("KEY", "VALUE")
 ```
 
+```ts
+new StubResponse().withStatusCode(400).withHeader("KEY", "VALUE")
+```
+
 The below are convenient functions to create response with common response content types
 
 ```go
@@ -405,11 +445,34 @@ rio.XMLReponse(body)
 rio.HTMLReponse(body)
 ```
 
+```ts
+// JSON 
+JSONReponse({fieldName: 'value'})
+
+// XML
+XMLReponse(`<xml></xml>`)
+
+// HTML
+HTMLReponse(`<html></html>`)
+```
+
 ### Status Code, Cookies, Header
 
 ```go
-resStub := NewResponse().WithHeader("X-REQUEST-HEADER", "HEADER_VALUE").WithStatusCode(400).WithCookie("KEY", "VALUE")
+resStub := NewResponse()
+  .WithHeader("X-REQUEST-HEADER", "HEADER_VALUE")
+  .WithStatusCode(400)
+  .WithCookie("KEY", "VALUE")
+
 NewStub().WithReturn(resStub)
+```
+
+```ts
+resStub := new StubResponse().
+  withHeader("X-REQUEST-HEADER", "HEADER_VALUE").
+  wthStatusCode(400).withCookie("KEY", "VALUE")
+
+new Stub('GET', Rule.contains('/path')).withReturn(resStub)
 ```
 
 ```json
@@ -1018,7 +1081,9 @@ STUB_CACHE_STRATEGY=default
 
 The default strategy cache stubs and protos in local memory and invalidate if there is any update/insert/delete in database. If we want to do performance testing, then can change `STUB_CACHE_STRATEGY` to `aside`
 
-[Docker Compose](https://hub.docker.com/repository/docker/hungdv136/rio/general)
+- [Docker Compose](docker/compose.yaml): HTTP mock server
+
+- [Docker Compose GRPC](docker/compose.grpc.yaml.yaml): HTTP and gRPC mock servers
 
 ## Contribution
 

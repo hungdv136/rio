@@ -60,6 +60,12 @@ func (app *App) handleCreate(ctx *gin.Context) {
 		} else {
 			stub.Protocol = rio.ProtocolHTTP
 		}
+
+		// By default active should be true since it is likely a mistake instead of intention
+		if !stub.Active {
+			log.Info(ctx, "switch active to true at index", i)
+			stub.Active = true
+		}
 	}
 
 	if err := app.stubStore.Create(ctx, params.Stubs...); err != nil {

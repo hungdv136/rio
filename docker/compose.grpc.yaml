@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  rio-http:
+    image: hungdv136/rio:v1.2.3
+    pull_policy: always
+    healthcheck:
+      test: curl --fail http://localhost:8896/ping || exit 1
+      interval: 10
+      timeout: 30s
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    environment:
+      - DB_PASSWORD=password
+      - DB_SCHEMA=rio_services
+      - DB_SERVER=db:3306
+      - DB_USER=admin
+      - SERVER_PORT=8896
+      - FILE_DIR=uploaded_dir
+    restart: on-failure
+    ports:
+      - "8896:8896"
+    volumes:
+      - shared_data:/app/data
+    depends_on:
+      - db
+
+  rio-grpc:
+    image: hungdv136/rio:v1.2.3
+    pull_policy: always
+    command: [ "./server-grpc" ]
+    healthcheck:
+      test: [ "CMD", "sh", "-c", "nc -z localhost 8897" ]
+      interval: 10
+      timeout: 30s
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    environment:
+      - DB_PASSWORD=password
+      - DB_SCHEMA=rio_services
+      - DB_SERVER=db:3306
+      - DB_USER=admin
+      - SERVER_PORT=8897
+      - FILE_DIR=uploaded_dir
+    restart: on-failure
+    ports:
+      - "8897:8897"
+    volumes:
+      - shared_data:/app/data
+    depends_on:
+      - db
+
+# if local disk is used for file store, then must use this to share data between rio-http and rio-grpc
+volumes:
+  shared_data:
