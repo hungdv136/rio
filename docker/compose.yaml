@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  rio:
+    image: hungdv136/rio:v1.2.3
+    pull_policy: always
+    healthcheck:
+      test: curl --fail http://localhost:8896/ping || exit 1
+      interval: 15s
+      timeout: 30s
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    environment:
+      - DB_PASSWORD=password
+      - DB_SCHEMA=rio_services
+      - DB_SERVER=db:3306
+      - DB_USER=admin
+      - SERVER_PORT=8896
+      - FILE_DIR=uploaded_dir
+    restart: on-failure
+    ports:
+      - "8896:8896"
+    volumes:
+      - shared_data:/app/data
+    depends_on:
+      - db
+
+ # This is for testing purpose since data are not persistent
+ # You should mount data accordingly when deploying on your testing environment
+  db:
+    image: mysql:8.0.18
+    environment:
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=rio_services
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_ROOT_PASSWORD=password
+    command: "--character-set-server=utf8mb4 --max-connections=100000 --sql-mode='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'"
+    ports:
+      - "3306:3306"
+    tmpfs:
+      - /var/lib/mysql
+
+volumes:
+  shared_data:

@@ -73,6 +73,7 @@ Rio is a declarative HTTP mocking library for unit test in Golang and HTTP/gPRC 
 - Dynamic response with go-template
 - Automatically generates stubs with reserve proxy mode
 - Ability to run tests in parallel to improve speed
+- Support SDK in Golang and TypeScript/Javascript
 
 ## How it works
 
@@ -116,7 +117,7 @@ Install
 go get github.com/hungdv136/rio@latest
 ```
 
-Write unit test with Golang
+Write unit test with Golang (NO deployment is required)
 
 ```go 
 func TestCallAPI(t *testing.T) {
@@ -177,7 +178,7 @@ func TestCallAPI(t *testing.T) {
 
 Suppose that we want to test (manual or automation) an API that calls an external API by simulating a mock response for that external API. It can help us to create stable tests by isolating our test suites with external systems
 
-[This repository](https://github.com/hungdv136/rio-js) illustrates how to use Rio to write integration tests in Javascript/TypeScript 
+Golang, TypeScript, Postman can be used to define and submit stubs to mock server. [This repository](https://github.com/hungdv136/rio-js) illustrates how to use Rio to write integration tests in Javascript/TypeScript
 
 ### Deploy `Rio` as a stand-alone service
 
@@ -234,6 +235,10 @@ This is to verify incoming requests against predefined stubs. If all rules are m
 NewStub().For("GET", Contains("/helloworld"))
 ```
 
+```ts
+new Stub("GET", Rule.contains("/helloworld"))
+```
+
 ```json
 {
   "request": {
@@ -250,6 +255,11 @@ NewStub().For("GET", Contains("/helloworld"))
 
 ```go
 NewStub().WithQuery("search_term", NotEmpty())
+```
+
+```ts
+new Stub("GET", Rule.contains("/helloworld"))
+  .withQuery("search_term", Rule.notEmpty())
 ```
 
 ```json
@@ -269,6 +279,11 @@ NewStub().WithQuery("search_term", NotEmpty())
 
 ```go
 NewStub().WithCookie("SESSION_ID", EqualTo("expected cookie value"))
+```
+
+```ts
+new Stub("GET", Rule.contains("/helloworld"))
+  .withCookie("SESSION_ID", Rule.equalsTo("expected cookie value"))
 ```
 
 ```json
@@ -291,6 +306,14 @@ NewStub().WithCookie("SESSION_ID", EqualTo("expected cookie value"))
 
 ```go
 NewStub().WithRequestBody(BodyJSONPath("$.name"), NotEmpty())
+```
+
+```ts
+new Stub('GET', Rule.endWith('/helloworld'))
+  .withRequestBody(
+    JSONPathRule("$.name", Rule.notEmpty()),
+    JSONPathRule("$.count", Rule.equalsTo(3000))
+  )
 ```
 
 ```json
@@ -333,6 +356,13 @@ NewStub().WithRequestBody(BodyXMLPath("//book/title"), NotEmpty())
 NewStub().WithRequestBody(MultipartForm("field_name"), NotEmpty())
 ```
 
+```ts
+new Stub('GET', Rule.endWith('/helloworld'))
+  .withRequestBody(
+    MultiPartFormRule("field_name", Rule.notEmpty())
+  )
+```
+
 ```json
 {
   "request": {
@@ -351,6 +381,13 @@ NewStub().WithRequestBody(MultipartForm("field_name"), NotEmpty())
 
 ```go
 NewStub().WithRequestBody(URLEncodedBody("CustomerID", EqualTo("352461777")))
+```
+
+```ts
+new Stub('GET', Rule.endWith('/helloworld'))
+  .withRequestBody(
+    URLEncodedBodyRule("CustomerID", Rule.equalsTo("352461777"))
+  )
 ```
 
 ```json
@@ -392,6 +429,10 @@ Response can be defined using fluent functions WithXXX (Header, StatusCode, Cook
 rio.NewResponse().WithStatusCode(400).WithHeader("KEY", "VALUE")
 ```
 
+```ts
+new StubResponse().withStatusCode(400).withHeader("KEY", "VALUE")
+```
+
 The below are convenient functions to create response with common response content types
 
 ```go
@@ -405,11 +446,35 @@ rio.XMLReponse(body)
 rio.HTMLReponse(body)
 ```
 
+```ts
+// JSON 
+JSONReponse({fieldName: 'value'})
+
+// XML
+XMLReponse(`<xml></xml>`)
+
+// HTML
+HTMLReponse(`<html></html>`)
+```
+
 ### Status Code, Cookies, Header
 
 ```go
-resStub := NewResponse().WithHeader("X-REQUEST-HEADER", "HEADER_VALUE").WithStatusCode(400).WithCookie("KEY", "VALUE")
+resStub := NewResponse()
+  .WithHeader("X-REQUEST-HEADER", "HEADER_VALUE")
+  .WithStatusCode(400)
+  .WithCookie("KEY", "VALUE")
+
 NewStub().WithReturn(resStub)
+```
+
+```ts
+resStub := new StubResponse()
+  .withHeader("X-REQUEST-HEADER", "HEADER_VALUE")
+  .withStatusCode(400)
+  .withCookie("KEY", "VALUE")
+
+new Stub('GET', Rule.contains('/path')).withReturn(resStub)
 ```
 
 ```json
@@ -439,10 +504,14 @@ Use JSONResponse to construct response with JSON (parameter can be map or struct
 
 ```go
 err := NewStub().For("POST", Contains("animal/create")).
-    WithHeader("X-REQUEST-ID", EqualTo(requestID)).
-    WithRequestBody(BodyJSONPath("$.name", EqualTo(animalName))).
     WillReturn(JSONResponse(types.Map{"id": animalID})).
     Send(ctx, server)
+```
+
+```ts
+await new Stub("POST", Rule.contains("animal/create"))
+  .willReturn(JSONResponse({"id": animalID})).
+  .send(server)
 ```
 
 ```json
@@ -465,10 +534,14 @@ Use XMLResponse to construct response with XML
 
 ```go
 err := NewStub().For("POST", Contains("animal/create")).
-    WithHeader("X-REQUEST-ID", EqualTo(requestID)).
-    WithRequestBody(BodyJSONPath("$.name", EqualTo(animalName))).
     WillReturn(XMLResponse(structVar)).
     Send(ctx, server)
+```
+
+```ts
+await new Stub("POST", Rule.contains("animal/create"))
+  .willReturn(XMLResponse(`<xml><animal name="bird"/></xml>`)).
+  .send(server)
 ```
 
 ```json
@@ -487,10 +560,14 @@ With XML data type, content must be encoded to base64 before submit stub as JSON
 
 ```go
 err := NewStub().For("POST", Contains("animal/create")).
-    WithHeader("X-REQUEST-ID", EqualTo(requestID)).
-    WithRequestBody(BodyJSONPath("$.name", EqualTo(animalName))).
     WillReturn(HTMLResponse("<html></html>")).
     Send(ctx, server)
+```
+
+```ts
+await new Stub("POST", Rule.contains("animal/create"))
+  .willReturn(HTMLResponse(`<html> content <html>`)).
+  .send(server)
 ```
 
 ```json
@@ -503,7 +580,7 @@ err := NewStub().For("POST", Contains("animal/create")).
 }
 ```
 
-With HTML data type, content must be encoded to base64 before submit stub as JSON directly to API. If you want to use raw string, submit with YAML format instead. See [YAML](testdata/stubs.yaml) for example
+With HTML data type, content must be encoded to base64 before submit stub as JSON to mokc API. Go and TS SDK handles this out of the box. If you want to use raw string, submit with YAML format instead. See [YAML](testdata/stubs.yaml) for example
 
 #### Stream/Binary
 
@@ -512,6 +589,13 @@ We should upload file to server, then assign file id and appropriate content typ
 ```go
 server.UploadFile(ctx, fileID, fileBody)
 NewStub().WithReturn(NewResponse().WithFileBody(fileID))
+```
+
+```ts
+const server = Server('http://<mock-server>');
+const fileID = await server.uploadFile('/<path/to/file>');
+
+new Stub().withReturn(new StubResponse().withFileBody(fileID))
 ```
 
 ```json
@@ -533,6 +617,11 @@ This is to redirect request to another url
 ```go
 resStub := NewResponse().WithRedirect("https://redirect_url.com")
 NewStub().WithReturn(resStub)
+```
+
+```ts
+resStub := NewResponse().withRedirect("https://redirect_url.com");
+new Stub().withReturn(resStub);
 ```
 
 ```json
@@ -558,6 +647,12 @@ rio.NewStub().
 		ForAny(rio.Contains("reverse_recording/animal/create")).
 		WithTargetURL(targetURL).
 		WithEnableRecord(true)
+```
+
+```ts
+new Stub('', Rule.contains("reverse_recording/animal/create"))
+  .withTargetURL(targetURL)
+  .withEnableRecord(true)
 ```
 
 ```json
@@ -594,7 +689,7 @@ We can upload file using rest for integration test `POST {rio-domain}/upload`
 3. Create a stub 
 
 ```go
-resStub := NewResponse().WithFileBody("image/jpeg", fileID))
+resStub := NewResponse().WithFileBody("image/jpeg", fileID)
 err := NewStub().For("GET", Contains("animal/image/download")).WillReturn(resStub).Send(ctx, server)
 ```
 
@@ -753,6 +848,8 @@ stubs:
 
 ## Advance Features
 
+All these features are supported in Go and TypeScript SDK with the same function names
+
 ### Support priority response
 
 Sometimes, we want the server to return a fallback response if there is no stub are fully matched with the expectation. In this case, we should submit two different stubs to the mock server. Rio will get the stub with highest weight first, if the weight is not specified, the latest stub will be used
@@ -788,10 +885,14 @@ It is sometimes we want to simulate slow response API. Rio supports this feature
 NewStub().For("GET", Contains("animal/create")).ShouldDelay(3 * time.Second)
 ```
 
+```ts
+new Stub("GET", Rule.contains("animal/create")).shouldDelay(3000)
+```
+
 ```json
 {
   "settings": {
-    "delay_duration": "3s"
+    "delay_duration": "3000000000"
   }
 }
 ```
@@ -890,6 +991,8 @@ stubs:
       delay_duration: 0s
     weight: 0
 ```
+
+Example for template in TypeScript [this file](https://github.com/hungdv136/rio-js/blob/main/example/sdk-install.test.ts)
  
 ## Mocking GRPC
 
@@ -1018,7 +1121,9 @@ STUB_CACHE_STRATEGY=default
 
 The default strategy cache stubs and protos in local memory and invalidate if there is any update/insert/delete in database. If we want to do performance testing, then can change `STUB_CACHE_STRATEGY` to `aside`
 
-[Docker Compose](https://hub.docker.com/repository/docker/hungdv136/rio/general)
+- [Docker Compose](docker/compose.yaml): HTTP mock server
+
+- [Docker Compose GRPC](docker/compose.grpc.yaml.yaml): HTTP and gRPC mock servers
 
 ## Contribution
 
