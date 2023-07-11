@@ -1,17 +1,22 @@
 # A lightweight declarative HTTP mocking framework in Golang
 
 ![ci](https://github.com/hungdv136/rio/workflows/ci/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hungdv136/rio)](https://goreportcard.com/report/github.com/hungdv136/rio)
+[![Go Reference](https://pkg.go.dev/badge/github.com/hungdv136/rio.svg)](https://pkg.go.dev/github.com/hungdv136/rio)
 
 - [A lightweight declarative HTTP mocking framework in Golang](#a-lightweight-declarative-http-mocking-framework-in-golang)
   - [Introduction](#introduction)
   - [Features](#features)
   - [How it works](#how-it-works)
   - [How to use in unit test for Golang](#how-to-use-in-unit-test-for-golang)
+    - [Prerequisites](#prerequisites)
+    - [Install](#install)
+    - [Usage](#usage)
   - [How to use in integration test](#how-to-use-in-integration-test)
     - [Deploy `Rio` as a stand-alone service](#deploy-rio-as-a-stand-alone-service)
     - [Change the root url configuration of the external to mock server](#change-the-root-url-configuration-of-the-external-to-mock-server)
     - [Perform manual test case](#perform-manual-test-case)
-    - [Write an automation test case with Golang](#write-an-automation-test-case-with-golang)
+    - [Write an automation test cases](#write-an-automation-test-cases)
   - [Request Matching](#request-matching)
     - [Match by method and url](#match-by-method-and-url)
     - [Match by query parameter](#match-by-query-parameter)
@@ -111,13 +116,21 @@ func CallAPI(ctx context.Context, rootURL string, input map[string]interface{}) 
 }
 ```
 
-Install
+### Prerequisites
+
+Golang 1.18+
+
+### Install
 
 ```bash
 go get github.com/hungdv136/rio@latest
 ```
 
-Write unit test with Golang (NO deployment is required)
+No deployment is required for unit test
+
+### Usage 
+
+Write unit test with Golang
 
 ```go 
 func TestCallAPI(t *testing.T) {
@@ -138,6 +151,7 @@ func TestCallAPI(t *testing.T) {
 			// Verify if the request body is composed correctly
 			WithRequestBody(rio.BodyJSONPath("$.name", rio.EqualTo(animalName))).
 			// Response with 200 (default) and JSON
+      // Body can be map, struct or JSON string
 			WillReturn(rio.JSONResponse(returnedBody)).
 			// Submit stub to mock server
 			Send(ctx, server))
@@ -158,7 +172,7 @@ func TestCallAPI(t *testing.T) {
 			For("POST", rio.EndWith("/animal")).
 			// Verify if the request body is composed correctly
 			WithRequestBody(rio.BodyJSONPath("$.name", rio.EqualTo(animalName))).
-			// Response with status 400
+			// Response with status 400 and empty body JSON
 			WillReturn(rio.NewResponse().WithStatusCode(400)).
 			// Submit stub to mock server
 			Send(ctx, server))
@@ -186,21 +200,26 @@ See [deploy](#how-to-deploy). After deployed, Rio can be accessed by other servi
 
 ### Change the root url configuration of the external to mock server
 
-Go to ENV management system to change the root URL to the mock server with the format: `http://rio-domain/echo`
+Go to ENV management system to change the root URL to the mock server with the format: `http://rio-domain/echo` (Must include **`/echo`** at the end)
 
 ### Perform manual test case 
 
 1. [Use Postman to submit stubs](#create-stubs-using-postman)
 2. Use Postman to perform manual test with your API
 
-### Write an automation test case with Golang
+### Write an automation test cases
 
 1. Create a new server
 
 This struct is used to connect with the remote server that we have deployed above, so we should provide the root url of that mock server when initializing the remote server struct
 
-```go
-server := rio.NewRemoteServerWithReporter(t, rootUrl)
+```go 
+server := rio.NewRemoteServer("http://rio-server")
+```
+
+```ts
+import { Server } from 'rio-ts-sdk'
+server := Server('http://rio-server')
 ```
 
 2. Define a stub
@@ -209,11 +228,23 @@ server := rio.NewRemoteServerWithReporter(t, rootUrl)
 resData :=types.Map{"data": uuid.NewString(),"verdict": "success"}
 stub := rio.NewStub().
 		For("GET", rio.Contains("animal/create")).
-		WithHeader("X-REQUEST-ID", rio.Contains(uuid.NewString())).
-		WithQuery("search_term", rio.EqualTo(uuid.NewString())).
-		WithCookie("SESSION_ID", rio.EqualTo(uuid.NewString())).
-		WillReturn(rio.NewResponse().WithBody(rio.MapToJSON(resData))).
+		WithHeader("X-REQUEST-ID", rio.Contains("<x-request-id>")).
+		WithQuery("search_term", rio.EqualTo("<search-value>")).
+		WithCookie("SESSION_ID", rio.EqualTo("<cookie-value>")).
+		WillReturn(rio.JSONResponse(resData)).
     Send(ctx, server)
+```
+
+```ts
+import { Stub, Rule, JSONResponse } from 'rio-ts-sdk'
+
+resData :={data: uuidv4(), verdict: "success"};
+stub := new Stub("GET", Rule.contains("animal/create"))
+  .withHeader("X-REQUEST-ID", Rule.contains('<x-request-id>'))
+  .withQuery("search_term", Rule.equalsTo('<search-value>'))
+  .withCookie("SESSION_ID", Rule.equalsTo('<cookie-value>'))
+  .willReturn(JSONResponse(resData))
+  .send(ctx, server);
 ```
 
 In the above example, the stub will be pushed to remote server via `stub/create_many` API. This should be done before performing a request to the test target service. Since the root url of the external service is switched to `Rio` service, the request will be routed to `Rio` service. Once a request comes, a generic handler in remote server will validate the following information
@@ -409,17 +440,17 @@ new Stub('GET', Rule.endWith('/helloworld'))
 
 See [operator](https://github.com/hungdv136/rio/blob/main/operator.go) for supported operators which can be used for any matching types including method, url, headers. cookies and bodies
 
-| DSL | Golang | Description |
-| --- | ------ | ----------- |
-| contains | rio.Contains | Checks whether actual value contains given value in parameter |
-| not_contains | rio.NotContains | Checks whether actual value contains given value in parameter |
-| regex | rio.Regex | Checks whether actual value matches with given regex in parameter |
-| equal_to | rio.EqualTo | Determines if two objects are considered equal. Works as require.Equal |
-| start_with | rio.StartWith | Tests whether the string begins with prefix. Support string only |
-| end_with | rio.EndWith | Tests whether the string begins with prefix. Support string only |
-| length | rio.Length | Checks length of object. Support string or array |
-| empty | rio.Empty | Check whether the specified object is considered empty. Works as require.Empty |
-| not_empty | rio.NotEmpty | Check whether the specified object is considered not empty. Works as require.NotEmpty |
+| DSL | Golang | TypeScript | Description |
+| --- | ------ | ---------- | ----------- |
+| contains | rio.Contains | Rule.contains | Checks whether actual value contains given value in parameter |
+| not_contains | rio.NotContains | Rule.notContains | Checks whether actual value contains given value in parameter |
+| regex | rio.Regex | Rule.regex | Checks whether actual value matches with given regex in parameter |
+| equal_to | rio.EqualTo | Rule.equalsTo | Determines if two objects are considered equal. Works as require.Equal |
+| start_with | rio.StartWith | Rule.startWith | Tests whether the string begins with prefix. Support string only |
+| end_with | rio.EndWith | Rule.endWith | Tests whether the string begins with prefix. Support string only |
+| length | rio.Length | Rule.withLength | Checks length of object. Support string or array |
+| empty | rio.Empty | Rule.empty | Check whether the specified object is considered empty. Works as require.Empty |
+| not_empty | rio.NotEmpty | Rule.notEmpty | Check whether the specified object is considered not empty. Works as require.NotEmpty |
 
 ## Response Definition
 
@@ -671,7 +702,7 @@ The server will create a new inactive stub into database as the recorded result.
 1. Create an appropriate server (local for unit test or remote for integration test)
 
 ```go
-server := NewLocalServerWithReporter(t)
+server := NewRemoteServer("http://mock-server")
 ```
 
 2. Upload file 
@@ -705,10 +736,12 @@ err := NewStub().For("GET", Contains("animal/image/download")).WillReturn(resStu
 4. Perform download request
 
 ```go
-res, err := httpkit.SendRequest(ctx, http.MethodGet, server.GetURL(ctx)+"/animal/image/download", httpkit.NewRequestOption())
+req := http.NewRequest(http.MethodGet, server.GetURL(ctx)+"/animal/image/download", nil)
+res, err := http.DefaultClient.Do(req)
 require.NoError(t, err)
 require.Equal(t, http.StatusOK, res.StatusCode)
 defer res.Body.Close()
+// Read response body and assert
 ```
 
 ## Create stubs using Postman
