@@ -1,4 +1,4 @@
-# A lightweight declarative HTTP mocking framework in Golang
+# A flexible declarative HTTP mocking framework in Golang
 
 ![ci](https://github.com/hungdv136/rio/workflows/ci/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hungdv136/rio)](https://goreportcard.com/report/github.com/hungdv136/rio)
@@ -65,11 +65,11 @@
 
 ## Introduction
 
-Rio is a declarative HTTP mocking library for unit test in Golang and HTTP/gPRC mock server for integration test. Using the same framework for both kind of tests can help to share stub definition schema or codes between developers and testers easily. This framework has been used for thousands of test cases internally for a long time ago, but it just has been published recently
+Rio is a declarative HTTP mocking library for unit test in Golang and HTTP/gPRC mock server for integration test. Using the same framework for both kind of tests can help to share stub definition schema or codes between developers and testers easily. This framework has been used for thousands of test cases internally for a long time ago, but it just has been published recently (Rio is a variant of parrot)
 
 ## Features
 
-- Simple and fluent API for unit test in Golang 
+- Fast, simple and fluent API for unit test in Golang 
 - DSL in YAML/JSON format for stub declarations
 - Supports wide-range response types (html, xml, json and binary)
 - Can be deployed as mock server (HTTP and gRPC) for integration test
@@ -151,7 +151,7 @@ func TestCallAPI(t *testing.T) {
 			// Verify if the request body is composed correctly
 			WithRequestBody(rio.BodyJSONPath("$.name", rio.EqualTo(animalName))).
 			// Response with 200 (default) and JSON
-      // Body can be map, struct or JSON string
+			// Body can be map, struct or JSON string
 			WillReturn(rio.JSONResponse(returnedBody)).
 			// Submit stub to mock server
 			Send(ctx, server))
