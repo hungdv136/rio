@@ -1,4 +1,4 @@
-FROM golang:1.18 AS build
+FROM golang:1.24 AS build
 
 RUN --mount=type=secret,id=GITHUB_TOKEN,required \
     git config --global url."https://$(cat /run/secrets/GITHUB_TOKEN):@github.com/".insteadOf "https://github.com/"
@@ -12,8 +12,8 @@ COPY go.mod go.sum /src/
 COPY . /src/
 
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/server cmd/server/main.go \
- && CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/migration cmd/migration/main.go \
- && CGO_ENABLED=0 GOOS=linux go build -a -tags musl -installsuffix cgo -o /app/server-grpc cmd/grpc/main.go
+    && CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/migration cmd/migration/main.go \
+    && CGO_ENABLED=0 GOOS=linux go build -a -tags musl -installsuffix cgo -o /app/server-grpc cmd/grpc/main.go
 
 FROM gcr.io/distroless/static-debian11 AS release
 

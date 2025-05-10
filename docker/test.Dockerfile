@@ -1,4 +1,4 @@
-FROM golang:1.18 AS base
+FROM golang:1.24 AS base
 
 ARG GITHUB_TOKEN
 
