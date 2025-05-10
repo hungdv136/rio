@@ -51,7 +51,7 @@ test-mariadb-down:
  		-v --rmi local
 
 test-mysql-up:
-	@COMPOSE_HTTP_TIMEOUT=180 docker-compose \
+	@COMPOSE_HTTP_TIMEOUT=180 docker compose \
 		-f docker/docker-compose-mysql.test.yml \
 		-p mysql_$(GITHUB_SHA) up \
 		--force-recreate \
